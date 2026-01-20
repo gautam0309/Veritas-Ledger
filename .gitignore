@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Fabric binaries and generated artifacts
+fabric-samples/bin/
+fabric-samples/test-network/organizations/peerOrganizations/
+fabric-samples/test-network/organizations/ordererOrganizations/
+fabric-samples/test-network/organizations/fabric-ca/org1/
+fabric-samples/test-network/organizations/fabric-ca/org2/
+fabric-samples/test-network/organizations/fabric-ca/ordererOrg/
+fabric-samples/test-network/channel-artifacts/
+fabric-samples/test-network/system-genesis-block/
+fabric-samples/test-network/*.tar.gz
+
+# Wallet
+web-app/wallet/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build
+*.tar.gz
+
+# Misc
+1/
