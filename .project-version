@@ -1,3 +1,3 @@
 # Project Version Tracker
-# Last update: Add certificate detail view for students
-# Commit 244/590
+# Last update: Create student router with auth middleware
+# Commit 245/590
