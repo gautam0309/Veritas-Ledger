@@ -1,3 +1,3 @@
 # Project Version Tracker
-# Last update: Fix redirect logic (#2)
-# Commit 390/590
+# Last update: Fix registerEnroll.sh: replace localhost with 127.0.0.1
+# Commit 391/590
