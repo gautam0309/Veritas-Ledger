@@ -1,3 +1,3 @@
 # Project Version Tracker
-# Last update: Fix whitespace formatting (#9)
-# Commit 395/590
+# Last update: Fix docker-compose-ca: add CSR_HOSTS for TLS SANs
+# Commit 396/590
