@@ -1,3 +1,3 @@
 # Project Version Tracker
-# Last update: Replace hardcoded :latest tags with IMAGE_TAG variable
-# Commit 408/590
+# Last update: Pin IMAGETAG=2.2.0 and CA_IMAGETAG=1.5.5 in network.sh
+# Commit 409/590
