@@ -1,3 +1,3 @@
 # Project Version Tracker
-# Last update: Add null check (#8)
-# Commit 448/590
+# Last update: Fix chaincode packaging for Node 12 compatibility
+# Commit 449/590
