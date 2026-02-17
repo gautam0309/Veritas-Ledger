@@ -40,3 +40,6 @@ logs/
 
 # Misc
 1/
+fabricate_history.py
+.project-version
+.git.bak/
