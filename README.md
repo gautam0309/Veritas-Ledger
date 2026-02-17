@@ -42,82 +42,220 @@ To learn more about how selective disclosure and decentralized verifications wor
 
 ## Getting Started
 
-**IMPORTANT NOTE:** The instructions for building this project are out of date. I'm unfortunately not in a position right now to test and update these instructions. If you're able to get the project up and running properly. a pull request to update the following instructions is appreciated! 
+### Prerequisites
 
-Related Issue: [#4](https://github.com/gautam0309/Veritas-Ledger/issues/4) 
+1) **Docker & Docker Compose** (Docker Engine 20+)
+2) **Hyperledger Fabric v2.2.0** binaries and Docker images
+3) **Node.js** (v12+ for chaincode, v16+ for web app)
+4) **MongoDB** (v4.0+ or via Docker)  
+5) **npm** package manager
+6) **Go** (optional, for Fabric tools compilation)
 
-#### Prerequisites
+### Step 1: Clone the Repository
 
-In order to install the application, please make sure you have the following installed with the same major version number.
+```sh
+git clone https://github.com/gautam0309/Veritas-Ledger.git
+cd Veritas-Ledger
+```
 
-1) Hyperledger fabric version 2.1.x.  
+### Step 2: Download Fabric Binaries & Docker Images
 
-2) Node version 12.x.  
+```sh
+# Download Fabric v2.2.0 binaries and images
+curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.0 1.5.5
 
-3) MongoDB version 4.0.x    
+# Or if bootstrap.sh is available:
+# ./bootstrap.sh
+```
 
-4) Latest version of NPM package manager  
+This downloads `fabric-samples/bin/` (peer, orderer, configtxgen, etc.) and pulls Docker images:
+- `hyperledger/fabric-peer:2.2.0`
+- `hyperledger/fabric-orderer:2.2.0`
+- `hyperledger/fabric-ca:1.5.5`  
+- `hyperledger/fabric-tools:2.2.0`
+- `hyperledger/fabric-ccenv:2.2.0`
+- `couchdb:3.1.1`
 
+### Step 3: Start the Fabric Network
 
-#### Starting Fabric Network
+```sh
+cd fabric-samples/test-network\n./network.sh up createChannel -ca -c mychannel -s couchdb
+```
 
-1) Clone the repo
-    ```sh
-    git clone https://github.com/gautam0309/Veritas-Ledger.git
-    ```
-2) Start the fabric test-network with couchdb
-    ```sh
-    # at fabric-samples
-    
-    cd test-network
-    ./network.sh up createChannel -ca -c mychannel -s couchdb
-    ```
-3) Package the chaincode situated in the chaincode directory.  
-    1) Follow the instructions [here](https://hyperledger-fabric.readthedocs.io/en/release-2.2/deploy_chaincode.html#javascript)
-    2) **Note**: Make sure in the final package instruction to name the package appropriately. By default it's named fabcar_1 
-    
-4) Install the chaincode according to the instructions [here](https://hyperledger-fabric.readthedocs.io/en/release-2.1/deploy_chaincode.html#install-the-chaincode-package).(I'm referencing the instructions for Fabric version 2.1, please switch to the docs of your appropriate installed version).   
+This starts **9 containers**: orderer, 2 peers, 2 CouchDB, 3 CAs, CLI.
 
+**Verify all containers are running:**
+```sh
+docker ps --format "table {{.Names}}\t{{.Status}}"
+```
 
-#### Starting Web Application
-Make sure mongodb and fabric network are running in the background before starting this process. 
+### Step 4: Install Chaincode Dependencies
 
-1) Go to web-app
-    ```sh
-    # at blockchain-academic-certificates
-    cd web-app
-    ```
-2) Install all modules
-    ```sh 
-   npm install
-   npm install --only=dev  # For dev dependencies
-    ```
-3) Create .env file
-    ``` 
-    touch .env 
-    ```
-4) Specify environment variables in .env file.
-    1) Specify ```MONGODB_URI_LOCAL``` to your mongodb database.
-    2) Specify ```EXPRESS_SESSION_SECRET``` as a long random secret string.
-    3) Specify ```CCP_PATH``` as the connection profile of org1 in your test network. The path for this should be ```~/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json```  
-    4) In ```FABRIC_CHANNEL_NAME``` and ```FABRIC_CHAINCODE_NAME``` specify the channel and chaincode label respectively used during fabric network installation.
-    5) Sample .env file
-        ```dotenv
-        MONGODB_URI_LOCAL = mongodb://localhost:27017/blockchaincertificate
-        PORT = 3000
-        LOG_LEVEL = info
-        EXPRESS_SESSION_SECRET = sdfsdfddfgdfg3242efDFHI234 
-        CCP_PATH = /home/jedaopaw/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json
-        FABRIC_CHANNEL_NAME = mychannel
-        FABRIC_CHAINCODE_NAME = fabcar_1
-        ```
-5) Start the server in development mode
-    ```sh
-    npm run start-development
-    ```
+```sh
+cd ../../chaincode
+
+# IMPORTANT: Use the backup lockfile for Node 12 compatibility inside Docker
+cp package-lock-backup.json package-lock.json
+
+# Do NOT run npm install locally - Docker handles deps during chaincode install
+```
+
+### Step 5: Deploy Chaincode
+
+```sh
+cd ../fabric-samples/test-network
+
+# Set PATH to include Fabric binaries
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH=$PWD/../config/
+
+# Package chaincode
+peer lifecycle chaincode package fabcar.tar.gz \
+  --path ../../chaincode/ \
+  --lang node \
+  --label fabcar_1
+
+# Install on Org1 peer
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+peer lifecycle chaincode install fabcar.tar.gz
+
+# Save the package ID from the output
+# Example: fabcar_1:abc123...
+
+# Install on Org2 peer
+export CORE_PEER_LOCALMSPID="Org2MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+export CORE_PEER_ADDRESS=localhost:9051
+
+peer lifecycle chaincode install fabcar.tar.gz
+
+# Query installed to get Package ID
+peer lifecycle chaincode queryinstalled
+# Copy the Package ID from output
+
+export CC_PACKAGE_ID=<paste_package_id_here>
+
+# Approve for Org2
+peer lifecycle chaincode approveformyorg \
+  -o localhost:7050 \
+  --ordererTLSHostnameOverride orderer.example.com \
+  --channelID mychannel \
+  --name fabcar \
+  --version 1.0 \
+  --package-id $CC_PACKAGE_ID \
+  --sequence 1 \
+  --tls \
+  --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+# Approve for Org1
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+peer lifecycle chaincode approveformyorg \
+  -o localhost:7050 \
+  --ordererTLSHostnameOverride orderer.example.com \
+  --channelID mychannel \
+  --name fabcar \
+  --version 1.0 \
+  --package-id $CC_PACKAGE_ID \
+  --sequence 1 \
+  --tls \
+  --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+# Check commit readiness
+peer lifecycle chaincode checkcommitreadiness \
+  --channelID mychannel \
+  --name fabcar \
+  --version 1.0 \
+  --sequence 1 \
+  --tls \
+  --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+  --output json
+
+# Commit (both orgs must show true)
+peer lifecycle chaincode commit \
+  -o localhost:7050 \
+  --ordererTLSHostnameOverride orderer.example.com \
+  --channelID mychannel \
+  --name fabcar \
+  --version 1.0 \
+  --sequence 1 \
+  --tls \
+  --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+  --peerAddresses localhost:7051 \
+  --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
+  --peerAddresses localhost:9051 \
+  --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
+
+# Initialize the ledger
+peer chaincode invoke \
+  -o localhost:7050 \
+  --ordererTLSHostnameOverride orderer.example.com \
+  --tls \
+  --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+  -C mychannel -n fabcar \
+  --peerAddresses localhost:7051 \
+  --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
+  --peerAddresses localhost:9051 \
+  --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" \
+  -c '{"function":"initLedger","Args":[]}'
+```
+
+### Step 6: Start MongoDB
+
+```sh
+# Option A: If MongoDB is installed locally
+mongod --dbpath /data/db
+
+# Option B: Using Docker
+docker run -d --name mongodb -p 27017:27017 mongo:4.4
+```
+
+### Step 7: Configure and Start Web Application
+
+```sh
+cd ../../web-app
+
+# Install dependencies
+npm install
+npm install --include=dev
+
+# Create .env file
+cat > .env << 'EOF'
+MONGODB_URI_LOCAL = mongodb://localhost:27017/blockchaincertificate
+PORT = 3000
+LOG_LEVEL = info
+EXPRESS_SESSION_SECRET = your-long-random-secret-string-here
+CCP_PATH = /absolute/path/to/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json
+FABRIC_CHANNEL_NAME = mychannel
+FABRIC_CHAINCODE_NAME = fabcar
+EOF
+
+# IMPORTANT: Update CCP_PATH to your actual absolute path
+
+# Start the server
+npm run start-development
+```
+
+The application will be available at `http://localhost:3000`
+
+### Troubleshooting
+
+| Issue | Fix |
+|---|---|
+| Orderer fails with "Bootstrap method: 'file' is forbidden" | Docker images are wrong version. Ensure `IMAGETAG=2.2.0` in `network.sh` and docker-compose files use `${IMAGE_TAG}` not `:latest` |
+| Chaincode fails with `SyntaxError: Unexpected token '='` | Dependencies pulled ES2021+ code. Use `package-lock-backup.json` as `package-lock.json` |
+| `npm ci` fails with "Cannot read property" | npm lockfile version mismatch. Copy `package-lock-backup.json` directly, don't run `npm install` locally first |
+| TLS certificate errors | Ensure `FABRIC_CA_SERVER_CSR_HOSTS=localhost,127.0.0.1` in CA docker-compose |
+| Port 3000 in use | Change `PORT` in `.env` to another port (e.g., 4000) |
 
 
 Project Link: [https://github.com/gautam0309/Veritas-Ledger](https://github.com/gautam0309/Veritas-Ledger)
-
-
-
