@@ -13,10 +13,23 @@ let root = "verify";
 async function postVerify(req, res, next) {
     try {
         let proofObject = req.body.proofObject;
-        proofObject = JSON.parse(proofObject);
+
+        try {
+            proofObject = JSON.parse(proofObject);
+        } catch (parseErr) {
+            return res.render("verify-fail", {
+                title, root,
+                logInType: req.session.user_type || "none",
+                message: "Invalid Proof Object. Please paste a valid JSON proof generated from the student dashboard."
+            });
+        }
 
         if (!proofObject.disclosedData || Object.keys(proofObject.disclosedData).length === 0) {
-            throw new Error("No parameter given. Provide parameters that need to be verified");
+            return res.render("verify-fail", {
+                title, root,
+                logInType: req.session.user_type || "none",
+                message: "Invalid Proof Object. The proof must contain 'disclosedData' with at least one attribute."
+            });
         }
         let proofIsCorrect = await encryption.verifyCertificateProof(proofObject.proof, proofObject.disclosedData, proofObject.certUUID);
 
