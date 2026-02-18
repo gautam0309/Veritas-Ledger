@@ -4,6 +4,11 @@ const validator = require('validator');
 
 const certificateSchema = new mongoose.Schema({
 
+    rollNumber: {
+        type: String,
+        required: true,
+        trim: true,
+    },
     studentName: {
         type: String,
         required: true,
@@ -56,8 +61,9 @@ const certificateSchema = new mongoose.Schema({
     },
 });
 
-certificateSchema.index({"studentEmail" : 1});
-certificateSchema.index({"universityEmail" : 1});
+certificateSchema.index({ "studentEmail": 1 });
+certificateSchema.index({ "universityEmail": 1 });
+certificateSchema.index({ "rollNumber": 1 });
 
 let certificates = mongoose.model("certificates", certificateSchema);
 certificates.createIndexes();

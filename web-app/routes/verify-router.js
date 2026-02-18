@@ -6,10 +6,14 @@ let title = "Verification Portal";
 let root = "verify";
 
 
-router.get('/', function(req, res, next) { res.render('verify', {   title, root,
-    logInType: req.session.user_type || "none"
-});});
+router.get('/', function (req, res, next) {
+    res.render('verify', {
+        title, root,
+        logInType: req.session.user_type || "none"
+    });
+});
 
 router.post('/', verifyController.postVerify);
+router.post('/rollnumber', verifyController.postVerifyByRollNumber);
 
 module.exports = router;
