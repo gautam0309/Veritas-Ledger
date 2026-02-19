@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
-<body class="bg-light">
+<body>
     <%- include('partials/navbar-partial.ejs') %>
 
         <!--// Major-->
@@ -38,7 +38,7 @@
                             </div>
                             <% } %>
 
-                                <form action="/university/issue" method="POST">
+                                <form action="/university/issue" method="POST" enctype="multipart/form-data">
                                     <div class="form-row">
                                         <div class="col form-group">
                                             <userName>Student Name </userName>
@@ -82,6 +82,21 @@
                                                 <input name="date" required type="date" class="form-control">
                                             </div> <!-- form-group end.// -->
                                         </div> <!-- form-row.// -->
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <userName>Certificate Image (Optional)</userName>
+                                                <input name="certificateImage" type="file" class="form-control-file"
+                                                    accept=".jpg,.jpeg,.png,.pdf">
+                                                <small class="text-muted">Upload PDF/image of actual degree (max
+                                                    10MB)</small>
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <userName>Expiry Date (Optional)</userName>
+                                                <input name="expiryDate" type="date" class="form-control">
+                                                <small class="text-muted">Leave empty for non-expiring
+                                                    certificates</small>
+                                            </div>
+                                        </div>
                                         <button type="submit" class="btn btn-primary btn-block"> Issue </button>
                                     </div> <!-- form-group// -->
                                 </form>

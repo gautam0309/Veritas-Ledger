@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Blockchain Certificate</title>
+    <title>Student Dashboard</title>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
@@ -22,56 +22,100 @@
 
 </head>
 
-<body class="bg-light">
+<body>
     <%- include('partials/navbar-partial.ejs') %>
 
+        <!-- Search Bar -->
+        <div class="container justify-content-center mt-3">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <input type="text" id="searchInput" class="form-control"
+                        placeholder="Search by university, department, major..."
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(102,126,234,0.3); color: #fff;">
+                </div>
+                <div class="col-md-4">
+                    <select id="filterUni" class="form-control"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(102,126,234,0.3); color: #fff;">
+                        <option value="">All Universities</option>
+                    </select>
+                </div>
+            </div>
 
-        <!--// Major-->
-        <!--// CGPA-->
-        <!--// Date of Issue-->
-        <!--// Name of student-->
-        <!--// Email of student-->
-        <!--//-->
-
-        <div class="container justify-content-center">
-
+            <p class="text-muted small">Showing <span id="visibleCount">
+                    <%= certData.length %>
+                </span> of <%= certData.length %> certificates</p>
 
             <% for(var i=0; i < certData.length; i++) { %>
-                <div class="row cert-container card">
+                <div class="row cert-container card cert-item" data-uni="<%= certData[i].universityName %>"
+                    data-dept="<%= certData[i].departmentName %>" data-major="<%= certData[i].major %>">
                     <div class="col-sm-12 card-body ">
-                        <div class="row text-center upper-row">
-                            <div class="col-sm-4 orange"> <strong>University<br></strong>
-                                <%= certData[i].universityName %>
+                        <% if (certData[i].revoked) { %>
+                            <div class="alert mb-2"
+                                style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #f85149; padding: 6px 12px; font-size: 0.85rem;">
+                                ⚠ This certificate has been REVOKED by the issuing university
                             </div>
-                            <div class="col-sm-4 orange"><strong>University Email <br></strong>
-                                <%= certData[i].universityEmail %>
-                            </div>
-                            <div class="col-sm-4 orange"><strong>CGPA <br></strong>
-                                <%= certData[i].cgpa %>
-                            </div>
-                        </div>
-                        <div class="row text-center middle-row">
-                            <div class="col-sm-4 orange"> <strong>Dept<br></strong>
-                                <%= certData[i].departmentName %>
-                            </div>
-                            <div class="col-sm-4 orange"><strong>Date Of Issue<br></strong>
-                                <%= certData[i].dateOfIssuing %>
-                            </div>
-                            <div class="col-sm-4 orange"><strong>Major <br></strong>
-                                <%= certData[i].major %>
-                            </div>
-                        </div>
-                        <div class="row text-center bottom-row">
-                            <div class="col-sm-4 orange"> <strong>Certificate UUID <br></strong>
-                                <%= certData[i].certUUID %>
-                            </div>
-                            <div class="col-sm-4 orange"><strong>Roll Number<br></strong>
-                                <%= certData[i].rollNumber || 'N/A' %>
-                            </div>
-                            <button id="shareButton" type="button" class="col-sm-4  btn btn-primary" data-toggle="modal"
-                                data-target="#shareDataModal" data-certid="<%= certData[i].certUUID %>">Share
-                                Certificate</button>
-                        </div>
+                            <% } %>
+                                <% if (certData[i].expired) { %>
+                                    <div class="alert mb-2"
+                                        style="background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.3); color: #ffc107; padding: 6px 12px; font-size: 0.85rem;">
+                                        ⏰ This certificate has EXPIRED on <%= certData[i].expiryDate %>
+                                    </div>
+                                    <% } %>
+                                        <div class="row text-center upper-row">
+                                            <div class="col-sm-4 orange"> <strong>University<br></strong>
+                                                <%= certData[i].universityName %>
+                                            </div>
+                                            <div class="col-sm-4 orange"><strong>University Email <br></strong>
+                                                <%= certData[i].universityEmail %>
+                                            </div>
+                                            <div class="col-sm-4 orange"><strong>CGPA <br></strong>
+                                                <%= certData[i].cgpa %>
+                                            </div>
+                                        </div>
+                                        <div class="row text-center middle-row">
+                                            <div class="col-sm-4 orange"> <strong>Dept<br></strong>
+                                                <%= certData[i].departmentName %>
+                                            </div>
+                                            <div class="col-sm-4 orange"><strong>Date Of Issue<br></strong>
+                                                <%= certData[i].dateOfIssuing %>
+                                            </div>
+                                            <div class="col-sm-4 orange"><strong>Major <br></strong>
+                                                <%= certData[i].major %>
+                                            </div>
+                                        </div>
+                                        <div class="row text-center bottom-row">
+                                            <div class="col-sm-4 orange"> <strong>Certificate UUID <br></strong>
+                                                <small>
+                                                    <%= certData[i].certUUID %>
+                                                </small>
+                                            </div>
+                                            <div class="col-sm-4 orange"><strong>Roll Number<br></strong>
+                                                <%= certData[i].rollNumber || 'N/A' %>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <button id="shareButton" type="button"
+                                                    class="btn btn-primary btn-sm btn-block" data-toggle="modal"
+                                                    data-target="#shareDataModal"
+                                                    data-certid="<%= certData[i].certUUID %>">Share Certificate</button>
+                                            </div>
+                                        </div>
+                                        <div class="row text-center mt-2">
+                                            <div class="col-sm-6">
+                                                <a href="/university/certificate/download/<%= certData[i].certUUID %>"
+                                                    class="btn btn-sm btn-outline-info btn-block">📥 Download PDF</a>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <% if (certData[i].certificateImage) { %>
+                                                    <a href="<%= certData[i].certificateImage %>" target="_blank"
+                                                        class="btn btn-sm btn-outline-success btn-block">🖼 View
+                                                        Original</a>
+                                                    <% } else { %>
+                                                        <span
+                                                            class="btn btn-sm btn-outline-secondary btn-block disabled">No
+                                                            Image Uploaded</span>
+                                                        <% } %>
+                                            </div>
+                                        </div>
                     </div>
                 </div>
                 <% } %>
@@ -135,7 +179,7 @@
                         <div class="modal-dialog modal-dialog-centered" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLongTitle">Proof Generated. Copy Proof
+                                    <h5 class="modal-title" id="shareSuccessModalTitle">Proof Generated. Copy Proof
                                         Below.</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
@@ -157,7 +201,7 @@
                         <div class="modal-dialog modal-dialog-centered" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLongTitle">Error Generating Proof.</h5>
+                                    <h5 class="modal-title" id="shareFailModalTitle">Error Generating Proof.</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
@@ -172,30 +216,47 @@
                         </div>
                     </div>
 
-
-
-
-                    <!--    <div class="row cert-container card">-->
-                    <!--        <div class="col-sm-12 card-body ">-->
-                    <!--            <div class="row text-center upper-row">-->
-                    <!--                <div class="col-sm-4 orange"> <strong>Name <br></strong> jedapaw </div>-->
-                    <!--                <div class="col-sm-4 orange"><strong>Email <br></strong> tasinishmam@gmail.com </div>-->
-                    <!--                <div class="col-sm-4 orange"><strong>CGPA <br></strong> 3.89</div>-->
-                    <!--            </div>-->
-                    <!--            <div class="row text-center middle-row">-->
-                    <!--                <div class="col-sm-4 orange"> <strong>Dept<br></strong> Electrical Engineering</div>-->
-                    <!--                <div class="col-sm-4 orange"><strong>Date Of Issue<br></strong> 5-07-2020 </div>-->
-                    <!--                <div class="col-sm-4 orange"><strong>Major <br></strong> Computer Science & Engineering</div>-->
-                    <!--            </div>-->
-                    <!--            <div class="row text-center bottom-row">-->
-                    <!--                <div class="col-sm-4 orange"> <strong>Certificate UUID <br></strong> 4d6b9b114db1380bb8b7f035a2982</div>-->
-                    <!--                <div class="col-sm-8 orange"><strong>Certificate Hash<br></strong> baadcdecdc3fd9c613d529ffa2982ed8a901943e66bc28934607804a09b68982 </div>-->
-                    <!--            </div>-->
-                    <!--        </div>-->
-                    <!--    </div>-->
-
         </div>
 </body>
 <script src="/js/dashboardStudent.js"></script>
+<script>
+    $(document).ready(function () {
+        // Populate university filter
+        var unis = new Set();
+        $('.cert-item').each(function () {
+            var uni = $(this).data('uni');
+            if (uni) unis.add(uni);
+        });
+        unis.forEach(function (u) {
+            $('#filterUni').append('<option value="' + u + '">' + u + '</option>');
+        });
+
+        function applyFilters() {
+            var search = $('#searchInput').val().toLowerCase();
+            var uni = $('#filterUni').val().toLowerCase();
+            var visible = 0;
+
+            $('.cert-item').each(function () {
+                var u = $(this).data('uni').toString().toLowerCase();
+                var d = $(this).data('dept').toString().toLowerCase();
+                var m = $(this).data('major').toString().toLowerCase();
+
+                var matchSearch = !search || u.includes(search) || d.includes(search) || m.includes(search);
+                var matchUni = !uni || u === uni;
+
+                if (matchSearch && matchUni) {
+                    $(this).show();
+                    visible++;
+                } else {
+                    $(this).hide();
+                }
+            });
+            $('#visibleCount').text(visible);
+        }
+
+        $('#searchInput').on('input', applyFilters);
+        $('#filterUni').on('change', applyFilters);
+    });
+</script>
 
 </html>

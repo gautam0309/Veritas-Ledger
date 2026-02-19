@@ -1,6 +1,7 @@
 let logger = require("../services/logger");
 let encryption = require('../services/encryption');
 let certificates = require('../database/models/certificates');
+let AuditLog = require('../database/models/auditlog');
 let moment = require('moment');
 let QRCode = require('qrcode');
 
@@ -34,7 +35,44 @@ async function postVerify(req, res, next) {
         let proofIsCorrect = await encryption.verifyCertificateProof(proofObject.proof, proofObject.disclosedData, proofObject.certUUID);
 
         if (proofIsCorrect) {
-            let certificateDbObject = await certificates.findOne({ "_id": proofObject.certUUID }).select("studentName studentEmail rollNumber _id dateOfIssuing universityName universityEmail");
+            let certificateDbObject = await certificates.findOne({ "_id": proofObject.certUUID });
+
+            // Check revocation
+            if (certificateDbObject.revoked) {
+                await AuditLog.create({
+                    action: 'certificate_verified',
+                    targetCertId: proofObject.certUUID,
+                    details: 'Proof verification attempted on REVOKED certificate',
+                    ipAddress: req.ip
+                });
+                return res.render("verify-fail", {
+                    title, root,
+                    logInType: req.session.user_type || "none",
+                    message: "⚠ This certificate has been REVOKED by the issuing university. Reason: " + (certificateDbObject.revokedReason || 'Not specified')
+                });
+            }
+
+            // Check expiry
+            if (certificateDbObject.expiryDate && new Date(certificateDbObject.expiryDate) < new Date()) {
+                await AuditLog.create({
+                    action: 'certificate_verified',
+                    targetCertId: proofObject.certUUID,
+                    details: 'Proof verification attempted on EXPIRED certificate',
+                    ipAddress: req.ip
+                });
+                return res.render("verify-fail", {
+                    title, root,
+                    logInType: req.session.user_type || "none",
+                    message: "⏰ This certificate has EXPIRED on " + moment(certificateDbObject.expiryDate).format('YYYY-MM-DD') + ". Please contact the issuing university."
+                });
+            }
+
+            await AuditLog.create({
+                action: 'certificate_verified',
+                targetCertId: proofObject.certUUID,
+                details: 'Certificate verified via Merkle proof',
+                ipAddress: req.ip
+            });
 
             res.render("verify-success", {
                 title, root,
@@ -59,7 +97,6 @@ async function postVerify(req, res, next) {
 
 /**
  * Verify certificate using Roll Number (simple method for employers).
- * Looks up the certificate in MongoDB by roll number, then verifies it exists on the blockchain.
  */
 async function postVerifyByRollNumber(req, res, next) {
     try {
@@ -69,7 +106,6 @@ async function postVerifyByRollNumber(req, res, next) {
             throw new Error("Please provide a valid Roll Number.");
         }
 
-        // Look up certificate in database by roll number
         let certificateDbObject = await certificates.findOne({ "rollNumber": rollNumber.trim() });
 
         if (!certificateDbObject) {
@@ -80,8 +116,37 @@ async function postVerifyByRollNumber(req, res, next) {
             });
         }
 
-        // Verify the certificate exists on blockchain by generating and verifying a proof
-        // We verify all available fields for full verification
+        // Check revocation
+        if (certificateDbObject.revoked) {
+            await AuditLog.create({
+                action: 'certificate_verified',
+                targetCertId: certificateDbObject._id.toString(),
+                details: 'Roll number verification attempted on REVOKED certificate',
+                ipAddress: req.ip
+            });
+            return res.render("verify-fail", {
+                title, root,
+                logInType: req.session.user_type || "none",
+                message: "⚠ This certificate has been REVOKED by the issuing university. Reason: " + (certificateDbObject.revokedReason || 'Not specified')
+            });
+        }
+
+        // Check expiry
+        if (certificateDbObject.expiryDate && new Date(certificateDbObject.expiryDate) < new Date()) {
+            await AuditLog.create({
+                action: 'certificate_verified',
+                targetCertId: certificateDbObject._id.toString(),
+                details: 'Roll number verification attempted on EXPIRED certificate',
+                ipAddress: req.ip
+            });
+            return res.render("verify-fail", {
+                title, root,
+                logInType: req.session.user_type || "none",
+                message: "⏰ This certificate has EXPIRED on " + moment(certificateDbObject.expiryDate).format('YYYY-MM-DD') + ". Please contact the issuing university."
+            });
+        }
+
+        // Verify on blockchain
         let allAttributes = ["universityName", "major", "departmentName", "cgpa"];
         let disclosedData = {};
         allAttributes.forEach(attr => {
@@ -94,6 +159,13 @@ async function postVerifyByRollNumber(req, res, next) {
         let proofIsCorrect = await encryption.verifyCertificateProof(mTreeProof, disclosedData, certificateDbObject._id.toString());
 
         if (proofIsCorrect) {
+            await AuditLog.create({
+                action: 'certificate_verified',
+                targetCertId: certificateDbObject._id.toString(),
+                details: 'Certificate verified via roll number lookup',
+                ipAddress: req.ip
+            });
+
             res.render("verify-success", {
                 title, root,
                 logInType: req.session.user_type || "none",

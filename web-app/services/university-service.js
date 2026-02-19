@@ -14,27 +14,27 @@ const certificateService = require('./certificate-service');
  */
 async function issueCertificate(certData) {
 
-    let universityObj = await universities.findOne({"email": certData.universityEmail});
-    let studentObj = await students.findOne({"email": certData.studentEmail});
+    let universityObj = await universities.findOne({ "email": certData.universityEmail });
+    let studentObj = await students.findOne({ "email": certData.studentEmail });
 
     if (!studentObj) throw new Error("Could not fetch student profile. Provide valid student email.");
     if (!universityObj) throw new Error("Could not fetch university profile.");
 
     let certDBModel = new certificates(certData);
 
-    let mTreeHash =  await encryption.generateMerkleRoot(certDBModel);
+    let mTreeHash = await encryption.generateMerkleRoot(certDBModel);
     let universitySignature = await encryption.createDigitalSignature(mTreeHash, certData.universityEmail);
     let studentSignature = await encryption.createDigitalSignature(mTreeHash, certData.studentEmail);
 
     let chaincodeResult = await chaincode.invokeChaincode("issueCertificate",
-        [mTreeHash, universitySignature, studentSignature, certData.dateOfIssuing, certDBModel._id, universityObj.publicKey, studentObj.publicKey ], false, certData.universityEmail);
+        [mTreeHash, universitySignature, studentSignature, certData.dateOfIssuing, certDBModel._id, universityObj.publicKey, studentObj.publicKey], false, certData.universityEmail);
 
     logger.debug(chaincodeResult);
 
     let res = await certDBModel.save();
-    if(!res) throw new Error("Could not create certificate in the database");
+    if (!res) throw new Error("Could not create certificate in the database");
 
-    return true; //If no errors were thrown, everything completed successfully.
+    return { success: true, certId: certDBModel._id.toString() };
 }
 
 /**
@@ -50,7 +50,7 @@ async function getCertificateDataforDashboard(universityName, universtiyEmail) {
     let certLedgerDataArray = await chaincode.invokeChaincode("getAllCertificateByUniversity",
         [universityProfile.publicKey], true, universtiyEmail);
 
-    let certUUIDArray = certLedgerDataArray.map( element => {
+    let certUUIDArray = certLedgerDataArray.map(element => {
         return element.certUUID
     });
 
@@ -60,4 +60,4 @@ async function getCertificateDataforDashboard(universityName, universtiyEmail) {
 }
 
 
-module.exports = {issueCertificate,  getCertificateDataforDashboard};
+module.exports = { issueCertificate, getCertificateDataforDashboard };

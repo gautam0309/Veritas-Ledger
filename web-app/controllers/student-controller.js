@@ -1,8 +1,10 @@
 let students = require('../database/models/students');
-let fabricEnrollment  = require('../services/fabric/enrollment');
+let fabricEnrollment = require('../services/fabric/enrollment');
 let chaincode = require('../services/fabric/chaincode');
 let logger = require("../services/logger");
 let studentService = require('../services/student-service');
+let AuditLog = require('../database/models/auditlog');
+let emailService = require('../services/email-service');
 
 let title = "Student Dashboard";
 let root = "student";
@@ -13,15 +15,26 @@ async function postRegisterStudent(req, res, next) {
         let keys = await fabricEnrollment.registerUser(req.body.email);
 
         let dbResponse = await students.create({
-            name : req.body.name,
+            name: req.body.name,
             email: req.body.email,
             password: req.body.password,
             publicKey: keys.publicKey
         });
 
+        await AuditLog.create({
+            action: 'registration',
+            performedBy: req.body.email,
+            details: `Student "${req.body.name}" registered`,
+            ipAddress: req.ip
+        });
 
-        res.render("register-success", { title, root,
-            logInType: req.session.user_type || "none"});
+        // Email notification
+        emailService.notifyRegistration(req.body.email, req.body.name, 'student');
+
+        res.render("register-success", {
+            title, root,
+            logInType: req.session.user_type || "none"
+        });
     }
     catch (e) {
         logger.error(e);
@@ -29,14 +42,14 @@ async function postRegisterStudent(req, res, next) {
     }
 }
 
-async function logOutAndRedirect (req, res, next) {
+async function logOutAndRedirect(req, res, next) {
     req.session.destroy(function () {
         res.redirect('/');
     });
 };
 
 
-async function postLoginStudent (req,res,next) {
+async function postLoginStudent(req, res, next) {
     try {
         let studentObject = await students.validateByCredentials(req.body.email, req.body.password)
 
@@ -45,6 +58,13 @@ async function postLoginStudent (req,res,next) {
         req.session.email = studentObject.email;
         req.session.name = studentObject.name;
         req.session.publicKey = studentObject.publicKey;
+
+        await AuditLog.create({
+            action: 'login',
+            performedBy: req.body.email,
+            details: 'Student login',
+            ipAddress: req.ip
+        });
 
         return res.redirect("/student/dashboard")
     } catch (e) {
@@ -57,8 +77,10 @@ async function postLoginStudent (req,res,next) {
 async function getDashboard(req, res, next) {
     try {
         let certData = await studentService.getCertificateDataforDashboard(req.session.publicKey, req.session.email);
-        res.render("dashboard-student", { title, root, certData,
-            logInType: req.session.user_type || "none"});
+        res.render("dashboard-student", {
+            title, root, certData,
+            logInType: req.session.user_type || "none"
+        });
 
     } catch (e) {
         logger.error(e);
@@ -66,4 +88,4 @@ async function getDashboard(req, res, next) {
     }
 }
 
-module.exports = {postRegisterStudent, postLoginStudent, logOutAndRedirect, getDashboard};
+module.exports = { postRegisterStudent, postLoginStudent, logOutAndRedirect, getDashboard };

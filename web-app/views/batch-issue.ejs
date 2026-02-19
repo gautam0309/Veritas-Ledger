@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Batch Issue Certificates</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
+        integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+    <link rel="stylesheet" href="stylesheets/style.css">
+</head>
+
+<body>
+    <%- include('partials/navbar-partial.ejs') %>
+
+        <div class="row justify-content-center form-all">
+            <div class="col-md-8">
+                <div class="card">
+                    <header class="card-header">
+                        <h4 class="card-title mt-2">Batch Issue Certificates (CSV Upload)</h4>
+                    </header>
+                    <article class="card-body">
+
+                        <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
+                            <div class="alert alert-danger" role="alert"
+                                style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #f85149;">
+                                <strong>Error:</strong>
+                                <%= errorMessage %>
+                            </div>
+                            <% } %>
+
+                                <div class="mb-4">
+                                    <h6 style="color: #38f9d7;">CSV Format Requirements:</h6>
+                                    <p class="text-muted small">Your CSV file must have the following columns (first row
+                                        as headers):</p>
+                                    <code
+                                        style="display: block; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; color: #667eea;">
+                            studentName, studentEmail, rollNumber, major, department, cgpa, date
+                        </code>
+                                    <p class="text-muted small mt-2">
+                                        <strong>Example row:</strong> John Doe, john@email.com, 2301201182, Computer
+                                        Science, CSE, 8.5, 2024-06-15
+                                    </p>
+                                </div>
+
+                                <form action="/university/batch-issue" method="POST" enctype="multipart/form-data">
+                                    <div class="form-group">
+                                        <label for="csvFile">Upload CSV File</label>
+                                        <input name="csvFile" type="file" class="form-control-file" id="csvFile"
+                                            accept=".csv" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-block mt-3">Process & Issue
+                                        Certificates</button>
+                                </form>
+
+                                <% if (typeof results !=='undefined' && results && results.length> 0) { %>
+                                    <hr style="border-color: #333;">
+                                    <h5 class="mt-4" style="color: #38f9d7;">Batch Results</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-dark table-sm mt-2"
+                                            style="background: rgba(255,255,255,0.05);">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Student</th>
+                                                    <th>Status</th>
+                                                    <th>Message</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% results.forEach(function(r, idx) { %>
+                                                    <tr
+                                                        style="<%= r.status === 'success' ? 'color: #38f9d7;' : 'color: #f85149;' %>">
+                                                        <td>
+                                                            <%= idx + 1 %>
+                                                        </td>
+                                                        <td>
+                                                            <%= r.student %>
+                                                        </td>
+                                                        <td>
+                                                            <%= r.status==='success' ? '✓ Success' : '✗ Failed' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= r.message %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <% let successCount=results.filter(r=> r.status === 'success').length;
+                                        let failCount = results.length - successCount;
+                                        %>
+                                        <p class="text-muted small">
+                                            Total: <%= results.length %> |
+                                                <span style="color: #38f9d7;">
+                                                    <%= successCount %> succeeded
+                                                </span> |
+                                                <span style="color: #f85149;">
+                                                    <%= failCount %> failed
+                                                </span>
+                                        </p>
+                                        <% } %>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+</body>
+
+</html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
+    integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ"
+    crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
+    integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm"
+    crossorigin="anonymous"></script>

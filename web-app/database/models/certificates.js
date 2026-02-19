@@ -53,17 +53,39 @@ const certificateSchema = new mongoose.Schema({
     cgpa: {
         type: String, //Saved as string because easier to hash.
         required: true,
-        //todo Add custom validator to ensure is a number in the range 0-4
     },
     dateOfIssuing: {
         type: Date,
         required: true
     },
+    // --- New fields for enhancements ---
+    revoked: {
+        type: Boolean,
+        default: false
+    },
+    revokedReason: {
+        type: String,
+        default: ''
+    },
+    revokedAt: {
+        type: Date,
+        default: null
+    },
+    expiryDate: {
+        type: Date,
+        default: null  // null = no expiry
+    },
+    certificateImage: {
+        type: String,  // file path to uploaded image/PDF
+        default: null
+    }
 });
 
 certificateSchema.index({ "studentEmail": 1 });
 certificateSchema.index({ "universityEmail": 1 });
 certificateSchema.index({ "rollNumber": 1 });
+// Prevent duplicate certificates: same roll number at same university
+certificateSchema.index({ "rollNumber": 1, "universityEmail": 1 }, { unique: true });
 
 let certificates = mongoose.model("certificates", certificateSchema);
 certificates.createIndexes();
