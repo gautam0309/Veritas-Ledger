@@ -39,6 +39,9 @@ $("#modalCreateProof").on('click', function (event) {
 
             content += '<div class="mb-2">';
             content += '<h6>Proof Object (for manual verification):</h6>';
+            if (result.proof.length === 0) {
+                content += '<div class="alert alert-info py-1" style="font-size: 0.85rem;"><strong>Note:</strong> Full disclosure selected. No hash proof required for verification.</div>';
+            }
             content += '<textarea class="form-control" rows="4" readonly onclick="this.select()">' + JSON.stringify({ proof: result.proof, disclosedData: result.disclosedData, certUUID: result.certUUID }) + '</textarea>';
             content += '<small class="text-muted">Click the text above to select all, then copy and share with the verifier.</small>';
             content += '</div>';
