@@ -30,51 +30,61 @@
                     </header>
                     <article class="card-body">
 
-                        <form action="/university/issue" method="POST">
-                            <div class="form-row">
-                                <div class="col form-group">
-                                    <userName>Student Name </userName>
-                                    <input name="studentName" required type="text" class="form-control" placeholder="">
-                                </div> <!-- form-group end.// -->
-                                <div class="col form-group">
-                                    <userName>Email</userName>
-                                    <input name="studentEmail" required type="email" class="form-control"
-                                        placeholder=" ">
-                                </div> <!-- form-group end.// -->
-                            </div> <!-- form-row end.// -->
-                            <div class="form-row">
-                                <div class="col form-group">
-                                    <userName>Roll Number</userName>
-                                    <input name="rollNumber" required type="text" class="form-control"
-                                        placeholder="e.g. 2301201182">
-                                </div> <!-- form-group end.// -->
-                            </div> <!-- form-row end.// -->
-                            <div class="form-group">
-                                <div class="form-row">
-                                    <div class="col form-group">
-                                        <userName>Major</userName>
-                                        <input name="major" required type="text" class="form-control" placeholder="">
-                                    </div> <!-- form-group end.// -->
-                                    <div class="col form-group">
-                                        <userName>CGPA</userName>
-                                        <input name="cgpa" required type="number" class="form-control" step="0.01"
-                                            min="0" max="10" placeholder="Out of 10">
-                                    </div> <!-- form-group end.// -->
-                                </div> <!-- form-group end.// -->
-                                <!-- form-group end.// -->
-                                <div class="form-row">
-                                    <div class="form-group col-md-6">
-                                        <userName>Department Name</userName>
-                                        <input name="department" required type="text" class="form-control">
-                                    </div> <!-- form-group end.// -->
-                                    <div class="form-group col-md-6">
-                                        <userName>Date of Issue</userName>
-                                        <input name="date" required type="date" class="form-control">
-                                    </div> <!-- form-group end.// -->
-                                </div> <!-- form-row.// -->
-                                <button type="submit" class="btn btn-primary btn-block"> Issue </button>
-                            </div> <!-- form-group// -->
-                        </form>
+                        <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
+                            <div class="alert alert-danger" role="alert"
+                                style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #f85149;">
+                                <strong>Error:</strong>
+                                <%= errorMessage %>
+                            </div>
+                            <% } %>
+
+                                <form action="/university/issue" method="POST">
+                                    <div class="form-row">
+                                        <div class="col form-group">
+                                            <userName>Student Name </userName>
+                                            <input name="studentName" required type="text" class="form-control"
+                                                placeholder="">
+                                        </div> <!-- form-group end.// -->
+                                        <div class="col form-group">
+                                            <userName>Email</userName>
+                                            <input name="studentEmail" required type="email" class="form-control"
+                                                placeholder=" ">
+                                        </div> <!-- form-group end.// -->
+                                    </div> <!-- form-row end.// -->
+                                    <div class="form-row">
+                                        <div class="col form-group">
+                                            <userName>Roll Number</userName>
+                                            <input name="rollNumber" required type="text" class="form-control"
+                                                placeholder="e.g. 2301201182">
+                                        </div> <!-- form-group end.// -->
+                                    </div> <!-- form-row end.// -->
+                                    <div class="form-group">
+                                        <div class="form-row">
+                                            <div class="col form-group">
+                                                <userName>Major</userName>
+                                                <input name="major" required type="text" class="form-control"
+                                                    placeholder="">
+                                            </div> <!-- form-group end.// -->
+                                            <div class="col form-group">
+                                                <userName>CGPA</userName>
+                                                <input name="cgpa" required type="number" class="form-control"
+                                                    step="0.01" min="0" max="10" placeholder="Out of 10">
+                                            </div> <!-- form-group end.// -->
+                                        </div> <!-- form-group end.// -->
+                                        <!-- form-group end.// -->
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <userName>Department Name</userName>
+                                                <input name="department" required type="text" class="form-control">
+                                            </div> <!-- form-group end.// -->
+                                            <div class="form-group col-md-6">
+                                                <userName>Date of Issue</userName>
+                                                <input name="date" required type="date" class="form-control">
+                                            </div> <!-- form-group end.// -->
+                                        </div> <!-- form-row.// -->
+                                        <button type="submit" class="btn btn-primary btn-block"> Issue </button>
+                                    </div> <!-- form-group// -->
+                                </form>
                     </article> <!-- card-body end .// -->
                 </div> <!-- col.//-->
 

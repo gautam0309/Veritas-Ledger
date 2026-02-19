@@ -84,7 +84,16 @@ async function postIssueCertificate(req, res, next) {
 
     } catch (e) {
         logger.error(e);
-        next(e);
+        // Show friendly error on the issue page instead of crashing
+        let errorMsg = e.message || "An unexpected error occurred.";
+        if (errorMsg.includes("student profile")) {
+            errorMsg = "Student with this email is not registered. The student must register on the platform first before a certificate can be issued.";
+        }
+        res.render("issue-university", {
+            title, root,
+            logInType: req.session.user_type || "none",
+            errorMessage: errorMsg
+        });
     }
 }
 
