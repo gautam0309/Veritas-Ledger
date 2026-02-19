@@ -345,6 +345,58 @@ async function postBatchIssue(req, res, next) {
     }
 }
 
+
+// Get analytics data for charts
+async function getAnalyticsData(req, res, next) {
+    try {
+        const universityEmail = req.session.email;
+
+        // 1. Certificates by Department & Avg CGPA
+        const deptStats = await certificates.aggregate([
+            { $match: { universityEmail: universityEmail } },
+            {
+                $group: {
+                    _id: "$departmentName",
+                    count: { $sum: 1 },
+                    avgCgpa: { $avg: { $toDouble: "$cgpa" } }
+                }
+            }
+        ]);
+
+        // 2. Issuance over time (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const timeStats = await certificates.aggregate([
+            {
+                $match: {
+                    universityEmail: universityEmail,
+                    dateOfIssuing: { $gte: sixMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m", date: "$dateOfIssuing" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]);
+
+        const totalIssued = await certificates.countDocuments({ universityEmail: universityEmail });
+
+        res.json({
+            deptStats,
+            timeStats,
+            totalIssued
+        });
+
+    } catch (e) {
+        logger.error(e);
+        res.status(500).json({ error: "Failed to fetch analytics data" });
+    }
+}
+
 module.exports = {
     postRegisterUniversity,
     postLoginUniversity,
@@ -355,6 +407,7 @@ module.exports = {
     downloadCertificatePDF,
     getBatchIssuePage,
     postBatchIssue,
+    getAnalyticsData,
     upload,
     csvUpload
 };

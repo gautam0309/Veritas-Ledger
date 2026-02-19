@@ -41,6 +41,7 @@ router.post('/login/submit', universityController.postLoginUniversity);
 router.get('/logout', universityController.logOutAndRedirect);
 
 // New routes for enhancements
+router.get('/api/analytics', universityMiddleware.authenticateLogin, universityController.getAnalyticsData);
 router.post('/revoke', universityMiddleware.authenticateLogin, universityController.postRevokeCertificate);
 router.get('/certificate/download/:certId', universityMiddleware.authenticateLogin, universityController.downloadCertificatePDF);
 router.get('/batch-issue', universityMiddleware.authenticateLogin, universityController.getBatchIssuePage);
