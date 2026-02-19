@@ -106,7 +106,11 @@ async function postLoginUniversity(req, res, next) {
         return res.redirect("/university/issue")
     } catch (e) {
         logger.error(e);
-        next(e);
+        res.render('login-university', {
+            title, root,
+            logInType: req.session.user_type || "none",
+            errorMessage: "Invalid email or password. Please try again."
+        });
     }
 }
 

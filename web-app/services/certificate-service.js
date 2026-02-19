@@ -16,6 +16,8 @@ function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
             return element.certUUID === dbEntry._id.toString();
         });
 
+        if (!chaincodeEntry) continue; // skip if no matching ledger entry
+
         let isExpired = false;
         if (dbEntry.expiryDate) {
             isExpired = new Date(dbEntry.expiryDate) < new Date();

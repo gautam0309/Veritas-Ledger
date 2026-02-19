@@ -69,7 +69,11 @@ async function postLoginStudent(req, res, next) {
         return res.redirect("/student/dashboard")
     } catch (e) {
         logger.error(e);
-        next(e);
+        res.render('login-student', {
+            title, root,
+            logInType: req.session.user_type || "none",
+            errorMessage: "Invalid email or password. Please try again."
+        });
     }
 }
 
