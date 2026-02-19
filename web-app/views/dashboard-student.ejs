@@ -121,101 +121,100 @@
                 <% } %>
 
 
-                    <div class="modal fade" id="shareDataModal" tabindex="-1" role="dialog"
-                        aria-labelledby="shareDataModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="shareDataModalTitle">Share Certificate</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="shareForm">
-                                        <div class="form-check">
-                                            <input name="universityName" class="form-check-input" type="checkbox"
-                                                value="true" id="university-name">
-                                            <label class="form-check-label" for="university-name">
-                                                University Name
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input name="major" class="form-check-input" type="checkbox" value="true"
-                                                id="major">
-                                            <label class="form-check-label" for="major">
-                                                Major
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input name="departmentName" class="form-check-input" type="checkbox"
-                                                value="true" id="department-name">
-                                            <label class="form-check-label" for="department-name">
-                                                Department Name
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input name="cgpa" class="form-check-input" type="checkbox" value="true"
-                                                id="cgpa">
-                                            <label class="form-check-label" for="cgpa">
-                                                CGPA
-                                            </label>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button id="modalCreateProof" type="button" class="btn btn-primary"
-                                        data-dismiss="modal">Create Proof</button>
-                                </div>
-                            </div>
-                        </div>
+
+
+        </div>
+        <div class="modal fade" id="shareDataModal" tabindex="-1" role="dialog" aria-labelledby="shareDataModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="shareDataModalTitle">Share Certificate</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-
-
-                    <!-- Modal -->
-                    <div class="modal fade" id="shareSuccessModal" tabindex="-1" role="dialog"
-                        aria-labelledby="shareSuccessModalCenterTitle" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="shareSuccessModalTitle">Proof Generated. Copy Proof
-                                        Below.</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div id="shareSuccessModalBody" class="modal-body">
-
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                </div>
+                    <div class="modal-body">
+                        <form id="shareForm">
+                            <div class="form-check">
+                                <input name="universityName" class="form-check-input" type="checkbox" value="true"
+                                    id="university-name">
+                                <label class="form-check-label" for="university-name">
+                                    University Name
+                                </label>
                             </div>
-                        </div>
-                    </div>
-
-
-                    <div class="modal fade" id="shareFailModal" tabindex="-1" role="dialog"
-                        aria-labelledby="shareFailModalCenterTitle" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="shareFailModalTitle">Error Generating Proof.</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div id="shareFailModalBody" class="modal-body">
-                                    Failed to generate Proof.
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                </div>
+                            <div class="form-check">
+                                <input name="major" class="form-check-input" type="checkbox" value="true" id="major">
+                                <label class="form-check-label" for="major">
+                                    Major
+                                </label>
                             </div>
-                        </div>
+                            <div class="form-check">
+                                <input name="departmentName" class="form-check-input" type="checkbox" value="true"
+                                    id="department-name">
+                                <label class="form-check-label" for="department-name">
+                                    Department Name
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input name="cgpa" class="form-check-input" type="checkbox" value="true" id="cgpa">
+                                <label class="form-check-label" for="cgpa">
+                                    CGPA
+                                </label>
+                            </div>
+                        </form>
                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button id="modalCreateProof" type="button" class="btn btn-primary" data-dismiss="modal">Create
+                            Proof</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+
+        <!-- Modal -->
+        <div class="modal fade" id="shareSuccessModal" tabindex="-1" role="dialog"
+            aria-labelledby="shareSuccessModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="shareSuccessModalTitle">Proof Generated. Copy Proof
+                            Below.</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div id="shareSuccessModalBody" class="modal-body">
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="shareFailModal" tabindex="-1" role="dialog"
+            aria-labelledby="shareFailModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="shareFailModalTitle">Error Generating Proof.</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div id="shareFailModalBody" class="modal-body">
+                        Failed to generate Proof.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
         </div>
 </body>
 <script src="/js/dashboardStudent.js"></script>

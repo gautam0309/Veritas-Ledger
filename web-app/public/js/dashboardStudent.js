@@ -3,13 +3,14 @@ $('#shareDataModal').on('show.bs.modal', function (event) {
     var certID = button.data('certid'); // Extract info from data-* attributes
 
     var modal = $(this);
-    modal.find('.modal-title').text(certID);
+    // Store certID in data attribute for later use
+    modal.data('certid', certID);
 });
 
 
 $("#modalCreateProof").on('click', function (event) {
     let certData = $("#shareForm").serializeArray().map(function (v) { return v.name; });
-    let certUUID = $("#shareDataModalTitle").text();
+    let certUUID = $('#shareDataModal').data('certid');
     certData = { "sharedAttributes": certData, certUUID };
     console.log(certData);
 
