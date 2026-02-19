@@ -53,8 +53,25 @@
                 </div> <!-- form-group end.// -->
               </div> <!-- form-row.// -->
               <div class="form-group">
-                <userName>Create password</userName>
-                <input name="password" required class="form-control" type="password">
+                <userName>Create Password</userName>
+                <div class="input-group">
+                  <input name="password" id="uniPassword" required class="form-control" type="password" minlength="6">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="toggleUniPass"
+                      style="cursor:pointer;">&#128065;</button>
+                  </div>
+                </div>
+              </div> <!-- form-group end.// -->
+              <div class="form-group">
+                <userName>Confirm Password</userName>
+                <div class="input-group">
+                  <input id="uniPasswordConfirm" required class="form-control" type="password" minlength="6">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="toggleUniPassConfirm"
+                      style="cursor:pointer;">&#128065;</button>
+                  </div>
+                </div>
+                <small id="uniPassMismatch" class="text-danger" style="display:none;">Passwords do not match.</small>
               </div> <!-- form-group end.// -->
               <div class="form-group">
                 <button type="submit" class="btn btn-primary btn-block"> Register </button>
