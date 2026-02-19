@@ -1,15 +1,15 @@
 const logger = require('../services/logger');
 
-function authenticateLogin (req, res, next) {
+function authenticateLogin(req, res, next) {
     try {
         if (req.session.user_type === "student") next();
-        else throw new Error("Unauthorized access: Login first");
+        else return res.redirect('/student/login');
     } catch (e) {
         next(e);
     }
 }
 
-function redirectToDashboardIfLoggedIn(req,res,next) {
+function redirectToDashboardIfLoggedIn(req, res, next) {
     try {
         if (req.session.user_type === "student") return res.redirect('/student/dashboard');
         else next();
@@ -18,4 +18,4 @@ function redirectToDashboardIfLoggedIn(req,res,next) {
     }
 }
 
-module.exports = {redirectToDashboardIfLoggedIn, authenticateLogin};
+module.exports = { redirectToDashboardIfLoggedIn, authenticateLogin };
