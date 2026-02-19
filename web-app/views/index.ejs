@@ -3,47 +3,105 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Blockchain Certificates</title>
+  <title>Veritas Ledger — Blockchain Academic Certificates</title>
   <base href="/">
-  <style>
-    html {
-      font-size: 20px;
-    }
-  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
+    integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
   <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
 
 <body>
- <%- include('partials/navbar-partial.ejs') %>
-<div class="jumbotron  d-flex align-items-center">
-    <div class="container text-center">
-      <h1>University Certificates on Blockchain</h1>
-      <h4></h4>
-      <p>This web application demonstrates educational certificate management platform using <strong>Hyperledger Fabric</strong> & <strong>Nodejs</strong></p>
-      <p><a class="btn btn-primary btn-md" href="/verify" role="button">Verify Certificates &raquo;</a></p>
-    </div>
-  </div>
+  <%- include('partials/navbar-partial.ejs') %>
 
-  <div id="jumbotron-index" class="container marketing">
-
-    <div class="row">
-      <div class="col-lg-6 text-center">
-        <h2>Students</h2>
-        <p>Students can use our platform to manage and share their certificates.</p>
-        <p><a class="btn btn-primary" href="/student/login" role="button">Sign In &raquo;</a>
-          <a class="btn btn-primary" href="/student/register" role="button">Register &raquo;</a></p>
-      </div>
-      <div class="col-lg-6 text-center">
-        <h2>Universities</h2>
-        <p>Universities can use our platform to issue certificates to their students</p>
-        <p><a class="btn btn-primary" href="/university/login" role="button">Sign In &raquo;</a>
-          <a class="btn btn-primary" href="/university/register" role="button">Register &raquo;</a></p>
+    <div class="jumbotron d-flex align-items-center">
+      <div class="container text-center">
+        <p
+          style="font-size: 0.9rem; color: var(--accent-cyan); font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1rem;">
+          🔗 POWERED BY HYPERLEDGER FABRIC
+        </p>
+        <h1>Tamper-Proof Academic<br>Credentials on Blockchain</h1>
+        <p>A decentralized platform for issuing, managing, and verifying university certificates with cryptographic
+          proof — zero fraud, zero gas fees.</p>
+        <p style="margin-top: 2rem;">
+          <a class="btn btn-primary btn-md" href="/verify" role="button" style="margin-right: 0.5rem;">Verify a
+            Certificate »</a>
+        </p>
       </div>
     </div>
-  </div>
+
+    <div class="container marketing" style="padding-bottom: 4rem;">
+      <div class="row">
+        <div class="col-lg-4 text-center">
+          <div class="card" style="padding: 2rem 1.5rem; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎓</div>
+            <h2 style="font-size: 1.3rem;">Students</h2>
+            <p style="font-size: 0.95rem;">Manage certificates, generate QR codes, and share verifiable proofs with
+              employers.</p>
+            <p>
+              <a class="btn btn-primary btn-sm" href="/student/login" role="button">Sign In »</a>
+              <a class="btn btn-outline-primary btn-sm" href="/student/register" role="button">Register »</a>
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4 text-center">
+          <div class="card" style="padding: 2rem 1.5rem; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">🏛️</div>
+            <h2 style="font-size: 1.3rem;">Universities</h2>
+            <p style="font-size: 0.95rem;">Issue tamper-proof certificates directly onto the blockchain ledger.</p>
+            <p>
+              <a class="btn btn-primary btn-sm" href="/university/login" role="button">Sign In »</a>
+              <a class="btn btn-outline-primary btn-sm" href="/university/register" role="button">Register »</a>
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4 text-center">
+          <div class="card" style="padding: 2rem 1.5rem; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">✅</div>
+            <h2 style="font-size: 1.3rem;">Employers</h2>
+            <p style="font-size: 0.95rem;">Verify certificates instantly using QR codes or roll numbers — no account
+              needed.</p>
+            <p>
+              <a class="btn btn-primary btn-sm" href="/verify" role="button">Verify Now »</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-12 text-center">
+          <div class="card" style="padding: 2rem;">
+            <div class="row">
+              <div class="col-md-3">
+                <h3
+                  style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                  100%</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Tamper-Proof</p>
+              </div>
+              <div class="col-md-3">
+                <h3
+                  style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                  ₹0</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Gas Fees</p>
+              </div>
+              <div class="col-md-3">
+                <h3
+                  style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                  < 2s</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Verification Time</p>
+              </div>
+              <div class="col-md-3">
+                <h3
+                  style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                  🔒</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Merkle Tree Proofs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
 
@@ -51,6 +109,9 @@
 
 </html>
 
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
+  integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
+  integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
