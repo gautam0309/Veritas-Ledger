@@ -63,11 +63,9 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
             logger.debug('inside isQuery');
 
             if (args) {
-                logger.debug('inside isQuery, args');
-                logger.debug(args);
+                logger.debug('inside isQuery, args length: ' + args.length);
                 let response = await networkObj.contract.evaluateTransaction(func, ...args);
-                logger.debug(response);
-                logger.debug(`Transaction ${func} with args ${args} has been evaluated`);
+                logger.debug(`Transaction ${func} has been evaluated`);
 
                 await networkObj.gateway.disconnect();
                 return JSON.parse(response);
@@ -85,16 +83,13 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
         } else {
             logger.debug('notQuery');
             if (args) {
-                logger.debug('notQuery, args');
-                logger.debug('$$$$$$$$$$$$$ args: ');
-                logger.debug(args);
+                logger.debug('notQuery, args length: ' + args.length);
                 logger.debug(func);
 
                 let response = await networkObj.contract.submitTransaction(func, ...args);
                 logger.debug('after submit');
 
-                logger.debug(response);
-                logger.debug(`Transaction ${func} with args ${args} has been submitted`);
+                logger.debug(`Transaction ${func} has been submitted`);
 
                 await networkObj.gateway.disconnect();
 
