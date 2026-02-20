@@ -1,0 +1,185 @@
+# Tasks
+
+- [x] Locate the dashboard view file containing "All Departments" filter <!-- id: 0 -->
+- [x] Analyze the CSS styles applied to the dropdowns <!-- id: 1 -->
+- [x] Fix the visibility issue (text color or background) <!-- id: 2 -->
+- [x] Verify the fix (by code inspection as browser usage is restricted) <!-- id: 3 -->
+
+## Chart Improvements
+- [x] Fix "Department Distribution" chart legend alignment <!-- id: 4 -->
+- [x] Add "Custom" option to Time Range dropdown <!-- id: 5 -->
+- [x] Implement Custom Date Range UI (Start/End Date inputs) <!-- id: 6 -->
+- [x] Update Frontend Logic to handle Custom Date Range <!-- id: 7 -->
+- [x] Update Backend Controller to process Custom Date Range <!-- id: 8 -->
+- [x] Fix Custom Date Range layout for smaller screens <!-- id: 9 -->
+- [x] Refine spacing and vertical alignment of Apply button <!-- id: 10 -->
+- [x] Fix vertical center alignment and increase gaps <!-- id: 11 -->
+- [x] Restructure header layout for responsible wrapping <!-- id: 12 -->
+- [x] Align custom date range to the left <!-- id: 13 -->
+- [x] Increase gap before Apply button <!-- id: 14 -->
+- [x] Increase Department Distribution chart size and container width <!-- id: 15 -->
+- [x] Optimize Chart.js legend for better text fit <!-- id: 16 -->
+- [x] Fix Certificate Data Layout alignment (Roll No, UUID, Hash) <!-- id: 17 -->
+- [x] Implement Hash Masking with Eye Toggle Button <!-- id: 18 -->
+- [x] Research "Registration/Signup" eye button style <!-- id: 19 -->
+- [x] Implement Bootstrap Modal for displaying full hash <!-- id: 20 -->
+- [x] Standardize Issue and Batch Issue button sizes to match Batch Register <!-- id: 21 -->
+- [x] Style Date inputs to have grey placeholder text (MM/DD/YYYY) <!-- id: 22 -->
+- [x] Optimize Certificate Details grid for mobile (2 items per row) <!-- id: 23 -->
+- [x] Add vertical spacing to Action Buttons for mobile stacking <!-- id: 24 -->
+- [x] Refine Certificate Details grid to flow continuously (remove separate rows) <!-- id: 25 -->
+- [x] Optimize Custom Date Range layout for mobile (side-by-side inputs, centered button) <!-- id: 26 -->
+- [x] Center "Hash" field on mobile (last odd item) <!-- id: 27 -->
+- [x] Center Chart Header and Filter on mobile <!-- id: 28 -->
+- [x] Fix Home Page button overlap/spacing on mobile <!-- id: 29 -->
+- [x] Change University Login redirect to Dashboard <!-- id: 30 -->
+- [x] Fix non-functional buttons on Student Dashboard <!-- id: 31 -->
+- [x] Move "Share Certificate" button to the end and center it <!-- id: 32 -->
+- [x] Debug Student Dashboard interactivity (CSS overlay/JS issues) <!-- id: 33 -->
+- [x] Enable PDF download for students (Auth Issue) <!-- id: 34 -->
+- [x] Debug server status/crash <!-- id: 35 -->
+- [x] Debug PDF download corruption (text/broken file) <!-- id: 36 -->
+- [x] Finalize security checks and remove debug logs <!-- id: 37 -->
+- [x] Finalize security checks and remove debug logs <!-- id: 37 -->
+- [x] Explain Blockchain Verification and Decentralization <!-- id: 38 -->
+- [x] Enhance Verification UI with "Blockchain Record" (Etherscan-like view) <!-- id: 39 -->
+- [x] Fix UI Styling (JSON bg, SVG colors, Logout btn) and CSP Errors <!-- id: 40 -->
+- [x] Increase size and weight of "Verified Attributes" icons <!-- id: 41 -->
+- [x] Fix Database Icon "lightness" (increase stroke width) <!-- id: 42 -->
+- [x] Fix Icon Sizing inconsistency (prevent flex shrink) <!-- id: 43 -->
+- [x] Fix Database Icon color (override global white stroke) <!-- id: 44 -->
+- [x] Format Attribute labels (Title Case) and Polish Blockchain Icon <!-- id: 45 -->
+- [x] Implement Security Hardening: Session & CSRF Protection <!-- id: 46 -->
+    - [x] Set `httpOnly: true` and `sameSite: 'lax'` for session cookies <!-- id: 47 -->
+    - [x] Implement CSRF Protection for state-changing endpoints <!-- id: 48 -->
+    - [x] Implement Session-to-Client binding (Security Fingerprinting) <!-- id: 49 -->
+- [x] Perform Full OWASP Top 10 & Web3 Security Upgrade <!-- id: 50 -->
+    - [x] Fix IDOR in University & Student Controllers <!-- id: 51 -->
+    - [x] Protect Sensitive Data (Hide passwords in queries) <!-- id: 52 -->
+    - [x] Prevent NoSQL Injection (Input sanitization) <!-- id: 53 -->
+    - [x] Tighten Rate Limiting for auth routes <!-- id: 54 -->
+- [x] Fix CSP Violation for Chart.js source maps <!-- id: 55 -->
+- [x] Fix Accessibility warning (aria-hidden focus) on Hash Modal <!-- id: 56 -->
+- [x] Perform Deep Security Audit (OWASP & Web3) <!-- id: 57 -->
+    - [x] Sanitize Email HTML Inputs <!-- id: 58 -->
+    - [x] Secure Wallet Storage (Remove cleartext keys) <!-- id: 59 -->
+    - [x] Add Chaincode Authorization (ctx.clientIdentity) <!-- id: 60 -->
+    - [x] Implement On-Chain Signature Verification <!-- id: 61 -->
+    - [x] Harden Controller Batch Logic <!-- id: 62 -->
+    - [x] Validate Analytics Date Ranges <!-- id: 63 -->
+- [x] Refine Authentication UX & Security <!-- id: 64 -->
+    - [x] Add Password Confirmation to Signup forms <!-- id: 65 -->
+    - [x] Add Password Visibility Toggle (Eye Icon) <!-- id: 66 -->
+    - [x] Implement Auth Redirects for already logged-in users <!-- id: 67 -->
+    - [x] Verify Password Match on Client & Server side <!-- id: 68 -->
+
+- [x] Comprehensive Security & Bug Audit <!-- id: 70 -->
+    - [x] Audit Routes & Middleware for Access Control <!-- id: 71 -->
+    - [x] Audit Controllers for Business Logic & Injection <!-- id: 72 -->
+    - [x] Specialized Blockchain & Hyperledger Security Audit <!-- id: 144 -->
+    - [x] Audit Business Logic & Trust Boundaries (Category 1) <!-- id: 145 -->
+    - [x] Verify Fabric Identity & ABAC Permissions (Category 2) <!-- id: 146 -->
+    - [x] Deep Dive into Chaincode Logic & State Transitions (Category 3) <!-- id: 147 -->
+    - [x] Audit Transaction Replay & Ordering (Category 4) <!-- id: 148 -->
+    - [x] Inspect API ↔ Blockchain Interaction (Category 5) <!-- id: 149 -->
+    - [x] Audit Wallet & Key Handling (Category 6) <!-- id: 150 -->
+    - [x] Review Infrastructure & Deployment Security (Category 7) <!-- id: 151 -->
+    - [x] Scan for Multi-Component Logic Gaps (Category 9) <!-- id: 152 -->
+- [x] Adversarial Blockchain Stress Testing (Expert Phase) <!-- id: 153 -->
+    - [x] Stress-test State Machine Invariants (Category 1) <!-- id: 154 -->
+    - [x] Audit Concurrency & Idempotency (Category 2) <!-- id: 155 -->
+    - [x] Verify Ledger Key Strategy & Collision Resistance (Category 4) <!-- id: 156 -->
+    - [x] Audit Off-Chain ↔ On-Chain Sync Gaps (Category 5) <!-- id: 157 -->
+    - [x] Review Resource Abuse & Query Economics (Category 8) <!-- id: 158 -->
+    - [x] Perform Negative Sequencing Tests (Category 10) <!-- id: 159 -->
+    - [x] Final Hardening Report update <!-- id: 160 -->
+- [x] System Reset & Clean Redeployment <!-- id: 161 -->
+    - [x] Cleanup Workspace Noise (Delete Java Samples) <!-- id: 162 -->
+    - [x] Wipe MongoDB Database <!-- id: 163 -->
+    - [x] Reset Fabric Network (network.sh down/up) <!-- id: 164 -->
+    - [x] Redeploy Hardened Node.js Chaincode <!-- id: 165 -->
+    - [x] Re-enroll Admin & Register Identities <!-- id: 166 -->
+- [x] Audit Services (Email, PDF, Fabric) <!-- id: 73 -->
+    - [x] Audit Database Models & Schemas <!-- id: 74 -->
+    - [x] Audit Smart Contract (educert_contract.js) <!-- id: 75 -->
+    - [x] Check for Sensitive Data Exposure (Logs, Env, Keys) <!-- id: 76 -->
+    - [x] Review Dependencies in package.json <!-- id: 77 -->
+
+- [x] Security & Dependency Hardening <!-- id: 78 -->
+    - [x] Update Vulnerable JS Dependencies (jQuery, Bootstrap) <!-- id: 79 -->
+    - [x] Harden Content Security Policy (Remove 'unsafe-inline', use Nonces) <!-- id: 80 -->
+    - [x] Address Unencrypted Communications (HTTPS preparation) <!-- id: 81 -->
+
+
+- [x] Extreme Bug & Web3 Audit <!-- id: 82 -->
+    - [x] Deep Audit of Smart Contract (`educert_contract.js`) <!-- id: 83 -->
+    - [x] Verify Chaincode Authorization (Attribute-Based Access Control) <!-- id: 84 -->
+    - [x] Audit Backend Issuance Logic for Race Conditions <!-- id: 85 -->
+    - [x] Check for Web3 Interaction Failures & Error Handling <!-- id: 86 -->
+    - [x] Perform UX Stress Test (Large Batches, Invalid Inputs) <!-- id: 87 -->
+    - [x] Scan for Logic Glitches in Dashboard Analytics <!-- id: 88 -->
+    - [x] Verify Data Consistency between MongoDB and Blockchain <!-- id: 89 -->
+    - [x] Fix CSP Script Violations (Nonces & Versions) <!-- id: 90 -->
+    - [x] Implement On-Chain Revocation <!-- id: 91 -->
+    - [x] Encrypt Fabric Wallet Storage (Custodial Keys Risk) <!-- id: 92 -->
+    - [x] Standardize Auth Password Validation via Unified Middleware <!-- id: 93 -->
+    - [x] Rewrite Batch Processing (Issue/Register) with Promise.allSettled and Chunking <!-- id: 108 -->
+    - [x] Implement ABAC for Chaincode `getAllCertificateByStudent` & `getAllCertificateByUniversity` queries <!-- id: 94 -->
+
+- [x] OWASP Cheat Sheet Series Deep Dive <!-- id: 131 -->
+    - [x] Audit against Node.js Security Cheat Sheet (CORS, Helmet, Error handling) <!-- id: 132 -->
+    - [x] Audit against Session Management Cheat Sheet (Cookie attributes, Session ID randomization) <!-- id: 133 -->
+    - [x] Audit against Password Storage Cheat Sheet (Bcrypt cost factor, Salting) <!-- id: 134 -->
+    - [x] Audit against REST Security Cheat Sheet (HTTP Methods, Media Types) <!-- id: 135 -->
+    - [x] Final Validation & Artifact Update <!-- id: 136 -->
+
+- [x] Final System Audit & Bug Fixes <!-- id: 95 -->
+    - [x] OWASP API Security Top 10 (2023) Final Audit <!-- id: 137 -->
+    - [x] Fix CSRF race condition on double-submit (Session Regeneration) <!-- id: 142 -->
+    - [x] Harden Chaincode (Exit 254) against RangeError / Timestamp conversion <!-- id: 143 -->
+    - [x] Update Audit Report & Walkthrough <!-- id: 141 -->
+    - [x] Audit Smart Contract Revocation & ABAC Logic <!-- id: 96 -->
+    - [x] Audit Controller Error Handling & Validation <!-- id: 97 -->
+        - [x] Add CGPA Validation in Certificate Model <!-- id: 100 -->
+    - [x] Verify CSRF Protection on all POST routes <!-- id: 98 -->
+    - [x] Verify Revocation Flow Integration <!-- id: 99 -->
+
+- [x] Deep System Crash/Error Audit <!-- id: 101 -->
+    - [x] Audit Backend Controllers for unhandled Promise rejections <!-- id: 102 -->
+    - [x] Audit Backend Services for missing try-catch blocks in async ops <!-- id: 103 -->
+    - [x] Scan for potential Null Pointer Exceptions (missing ?. operator) <!-- id: 104 -->
+    - [x] Audit Smart Contract for non-deterministic functions and state access panics <!-- id: 106 -->
+    - [x] Final OWASP Standards Hardening (ASVS, API Security) <!-- id: 109 -->
+- [x] OWASP Web Security Testing Guide (WSTG) Deep Audit <!-- id: 115 -->
+    - [x] Test for Bypassing Authorization Schema (WSTG-ATHZ-02) <!-- id: 116 -->
+    - [x] Test for Account Enumeration and Guessable User Account (WSTG-IDNT-04) <!-- id: 117 -->
+    - [x] Test for HTTP Strict Transport Security (HSTS) (WSTG-CONF-07) <!-- id: 118 -->
+- [x] Advanced Fabric Attack Vector Audit (10 Expert Areas) <!-- id: 167 -->
+    - [x] 1. Cross-Channel / Cross-Contract Confusion Analysis <!-- id: 168 -->
+    - [x] 2. Determinism & Non-Deterministic Execution Review <!-- id: 169 -->
+    - [x] 3. Serialization / Canonicalization Bugs Review <!-- id: 170 -->
+    - [x] 4. Ledger Growth & Long-Term State Risks Mitigation <!-- id: 171 -->
+    - [x] 5. Upgrade & Migration Attack Surface Analysis <!-- id: 172 -->
+    - [x] 6. Cryptographic Boundary Assumptions Review <!-- id: 173 -->
+    - [x] 7. Implicit Trust Relationships Mapping <!-- id: 174 -->
+    - [x] 8. Observability / Logging Side Channels Redaction <!-- id: 175 -->
+    - [x] 9. Adversarial Input Design Testing <!-- id: 176 -->
+    - [x] 10. Failure Mode & Recovery Security Simulation <!-- id: 177 -->
+
+- [x] Dev Environment False Security Audit (9 Distributed Risks) <!-- id: 178 -->
+    - [x] 1. Single Peer / Endorsement Disagreement Review <!-- id: 179 -->
+    - [x] 2. Endorsement & Policy Illusions Verification <!-- id: 180 -->
+    - [x] 3. Determinism Issues Hidden by Local Execution <!-- id: 181 -->
+    - [x] 4. Timing & Race Conditions Constraints <!-- id: 182 -->
+    - [x] 5. File System & Local Key Handling Leaks <!-- id: 183 -->
+    - [x] 6. Chaincode Crash & Panic Surfaces Probe <!-- id: 184 -->
+    - [x] 7. Authentication & Session Model Drift <!-- id: 185 -->
+    - [x] 8. Event Listener Trust Assumptions <!-- id: 186 -->
+    - [x] 9. Production Migration Landmines Assessment <!-- id: 187 -->
+
+- [x] SAMM Level 3 Maturity Hardening (Enterprise Grade) <!-- id: 121 -->
+
+    - [x] Governance: Formalize Security Policy & Metrics (Strategy & Metrics L3) <!-- id: 122 -->
+    - [x] Implementation: Automated Static Security Analysis (Secure Build L3) <!-- id: 123 -->
+    - [x] Operations: Functional Incident Response & Alerting (Incident Mgt L3) <!-- id: 124 -->
+    - [x] Design: Automated Threat Modeling (Threat Assessment L3) <!-- id: 125 -->
