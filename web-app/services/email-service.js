@@ -27,6 +27,19 @@ function initializeTransporter() {
 initializeTransporter();
 
 /**
+ * Simple HTML escape function to prevent injection
+ */
+function escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/**
  * Send an email notification
  * @param {string} to - Recipient email
  * @param {string} subject - Email subject
@@ -55,12 +68,16 @@ async function sendEmail(to, subject, html) {
  */
 async function notifyCertificateIssued(studentEmail, studentName, universityName, major) {
     const subject = `New Certificate Issued - ${universityName}`;
+    const eStudentName = escapeHTML(studentName);
+    const eUniversityName = escapeHTML(universityName);
+    const eMajor = escapeHTML(major);
+
     const html = `
         <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #fff; padding: 30px; border-radius: 10px;">
             <h2 style="color: #38f9d7;">Certificate Issued!</h2>
-            <p>Dear <strong>${studentName}</strong>,</p>
-            <p>A new certificate has been issued to you by <strong style="color: #667eea;">${universityName}</strong>.</p>
-            <p><strong>Major:</strong> ${major}</p>
+            <p>Dear <strong>${eStudentName}</strong>,</p>
+            <p>A new certificate has been issued to you by <strong style="color: #667eea;">${eUniversityName}</strong>.</p>
+            <p><strong>Major:</strong> ${eMajor}</p>
             <p>You can view and share your certificate from your <a href="http://localhost:4000/student/dashboard" style="color: #38f9d7;">Student Dashboard</a>.</p>
             <hr style="border-color: #333;">
             <p style="color: #999; font-size: 12px;">This certificate is verified on the Hyperledger Fabric blockchain and is tamper-proof.</p>
@@ -75,12 +92,16 @@ async function notifyCertificateIssued(studentEmail, studentName, universityName
  */
 async function notifyCertificateRevoked(studentEmail, studentName, universityName, reason) {
     const subject = `Certificate Revoked - ${universityName}`;
+    const eStudentName = escapeHTML(studentName);
+    const eUniversityName = escapeHTML(universityName);
+    const eReason = escapeHTML(reason);
+
     const html = `
         <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #fff; padding: 30px; border-radius: 10px;">
             <h2 style="color: #f85149;">Certificate Revoked</h2>
-            <p>Dear <strong>${studentName}</strong>,</p>
-            <p>Your certificate from <strong>${universityName}</strong> has been revoked.</p>
-            <p><strong>Reason:</strong> ${reason}</p>
+            <p>Dear <strong>${eStudentName}</strong>,</p>
+            <p>Your certificate from <strong>${eUniversityName}</strong> has been revoked.</p>
+            <p><strong>Reason:</strong> ${eReason}</p>
             <p>If you believe this is an error, please contact your university directly.</p>
             <hr style="border-color: #333;">
             <p style="color: #667eea; font-size: 12px;">— Veritas Ledger</p>
@@ -94,12 +115,15 @@ async function notifyCertificateRevoked(studentEmail, studentName, universityNam
  */
 async function notifyRegistration(email, name, role) {
     const subject = `Welcome to Veritas Ledger - Registration Successful`;
+    const eName = escapeHTML(name);
+    const eRole = escapeHTML(role);
+
     const html = `
         <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #fff; padding: 30px; border-radius: 10px;">
             <h2 style="color: #38f9d7;">Welcome to Veritas Ledger!</h2>
-            <p>Dear <strong>${name}</strong>,</p>
-            <p>Your ${role} account has been created successfully.</p>
-            <p>You can now <a href="http://localhost:4000/${role}/login" style="color: #38f9d7;">log in</a> to access your dashboard.</p>
+            <p>Dear <strong>${eName}</strong>,</p>
+            <p>Your ${eRole} account has been created successfully.</p>
+            <p>You can now <a href="http://localhost:4000/${eRole}/login" style="color: #38f9d7;">log in</a> to access your dashboard.</p>
             <hr style="border-color: #333;">
             <p style="color: #667eea; font-size: 12px;">— Veritas Ledger</p>
         </div>
@@ -107,9 +131,33 @@ async function notifyRegistration(email, name, role) {
     await sendEmail(email, subject, html);
 }
 
+/**
+ * Send transcript request notification
+ */
+async function notifyTranscriptRequest(universityEmail, studentName, certUUID, note) {
+    const subject = `Transcript Request - ${studentName}`;
+    const eStudentName = escapeHTML(studentName);
+    const eCertUUID = escapeHTML(certUUID);
+    const eNote = escapeHTML(note || 'No additional note provided.');
+
+    const html = `
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #fff; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #feca57;">Transcript Request</h2>
+            <p><strong>Student:</strong> ${eStudentName}</p>
+            <p><strong>Certificate UUID:</strong> ${eCertUUID}</p>
+            <p><strong>Note:</strong> ${eNote}</p>
+            <p>Please process this request according to your university's procedures.</p>
+            <hr style="border-color: #333;">
+            <p style="color: #667eea; font-size: 12px;">— Veritas Ledger System Notification</p>
+        </div>
+    `;
+    await sendEmail(universityEmail, subject, html);
+}
+
 module.exports = {
     sendEmail,
     notifyCertificateIssued,
     notifyCertificateRevoked,
-    notifyRegistration
+    notifyRegistration,
+    notifyTranscriptRequest
 };

@@ -6,67 +6,101 @@
     <title>Blockchain Certificate</title>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
-        integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
 <body>
 
-    <%- include('partials/navbar-partial.ejs') %>
+    <div class="app-wrapper">
+        <div class="page-bg-overlay">
+            <div class="bg-grid"></div>
+            <div class="bg-dots"></div>
+            <div class="bg-shape bg-shape-1"></div>
+            <div class="bg-shape bg-shape-2"></div>
+        </div>
 
+        <%- include('partials/navbar-partial.ejs') %>
 
-        <div class="row justify-content-center form-all">
-            <div class="col-md-5">
-                <div class="card">
-                    <header class="card-header">
-                        <h4 class="card-title mt-2">Student Login</h4>
-                    </header>
-                    <article class="card-body">
+            <div class="auth-section py-5">
+                <div class="auth-container">
+                    <div class="auth-logo mb-4">
+                        <div class="logo-box mx-auto d-flex align-items-center justify-content-center"
+                            style="width: 60px; height: 60px; background: var(--primary-gradient); border-radius: 15px; color: white;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <path d="M8 11h8M12 7v8"></path>
+                            </svg>
+                        </div>
+                    </div>
 
-                        <form action="/student/login/submit" method="POST">
+                    <div class="auth-header text-center mb-4">
+                        <h1 class="h3 font-weight-bold" style="color: var(--primary);">Student Portal</h1>
+                        <p class="text-secondary small">Secure access to your academic record.</p>
+                    </div>
 
-                            <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
-                                <div class="alert alert-danger" role="alert"
-                                    style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #f85149;">
-                                    <strong>Error:</strong>
-                                    <%= errorMessage %>
-                                </div>
-                                <% } %>
+                    <div class="auth-tabs d-flex mb-4" style="border-bottom: 2px solid var(--border-light);">
+                        <a href="/student/login" class="auth-tab active flex-grow-1 text-center py-2"
+                            style="font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent); text-decoration: none;">Login</a>
+                        <a href="/student/register" class="auth-tab flex-grow-1 text-center py-2"
+                            style="font-weight: 600; color: var(--text-secondary); text-decoration: none;">Signup</a>
+                    </div>
 
-                                    <div class="form-row">
-                                        <div class="col form-group">
-                                            <userName>Email</userName>
-                                            <input name="email" required type="email" class="form-control"
-                                                placeholder=" ">
-                                        </div> <!-- form-group end.// -->
-                                    </div> <!-- form-row end.// -->
+                    <article class="auth-body">
+                        <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
+                            <div class="alert alert-danger" role="alert" style="border-radius: 12px;">
+                                <strong>Error:</strong>
+                                <%= errorMessage %>
+                            </div>
+                            <% } %>
 
-                                    <div class="form-group">
-                                        <userName>Password</userName>
-                                        <input name="password" required class="form-control" type="password">
-                                    </div> <!-- form-group end.// -->
-                                    <div class="form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"> Login </button>
-                                    </div> <!-- form-group// -->
-                        </form>
-                    </article> <!-- card-body end .// -->
-                    <div class="border-top card-body text-center">Don't have an account? <a
-                            href="/student/register">Register</a></div>
-                </div> <!-- card.// -->
-            </div> <!-- col.//-->
+                                <form action="/student/login/submit" method="POST">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <div class="form-group mb-3">
+                                        <label class="small font-weight-bold text-secondary">Email Address</label>
+                                        <input name="email" required type="email" class="form-control py-4"
+                                            placeholder="john@example.com" style="border-radius: 12px;">
+                                    </div>
 
-        </div> <!-- row.//-->
+                                    <div class="form-group mb-4">
+                                        <label class="small font-weight-bold text-secondary">Password</label>
+                                        <div class="input-group">
+                                            <input name="password" id="stuLoginPassword" required
+                                                class="form-control py-4" type="password" placeholder="••••••••"
+                                                style="border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary px-3" type="button"
+                                                    id="toggleStuLoginPass"
+                                                    style="border-top-right-radius: 12px; border-bottom-right-radius: 12px; background: var(--bg-secondary); border-color: var(--border-light);">
+                                                    <i data-feather="eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
 
+                                    <button type="submit" id="submitBtn"
+                                        class="btn btn-primary btn-block py-3 font-weight-bold shadow-sm"
+                                        style="border-radius: 12px;">Sign In to Ledger</button>
+                                </form>
+                                <script nonce="<%= nonce %>">
+                                    document.querySelector('form').addEventListener('submit', function () {
+                                        const btn = document.getElementById('submitBtn');
+                                        btn.disabled = true;
+                                        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Signing in...';
+                                    });
+                                </script>
+                    </article>
 
+                    <div class="auth-footer text-center mt-4">
+                        <a href="/" class="back-link-modern"><i data-feather="arrow-left"></i> Back to Homepage</a>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('partials/footer-partial.ejs') %>
+    </div>
 </body>
 
 </html>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
-    integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ"
-    crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
-    integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm"
-    crossorigin="anonymous"></script>
-<script src="/js/register.js"></script>
+<script nonce="<%= nonce %>" src="/js/register.js"></script>

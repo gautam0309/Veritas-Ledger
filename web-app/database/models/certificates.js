@@ -53,6 +53,10 @@ const certificateSchema = new mongoose.Schema({
     cgpa: {
         type: String, //Saved as string because easier to hash.
         required: true,
+        validate: {
+            validator: (v) => validator.isFloat(v, { min: 0, max: 10 }),
+            message: '{VALUE} is not a valid CGPA (must be 0-10)'
+        }
     },
     dateOfIssuing: {
         type: Date,

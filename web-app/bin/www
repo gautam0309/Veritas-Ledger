@@ -20,6 +20,11 @@ app.set('port', port);
 
 var server = http.createServer(app);
 
+// Increase timeout for long-running batch operations (10 minutes)
+server.timeout = 600000;
+server.keepAliveTimeout = 610000;
+server.headersTimeout = 620000;
+
 /**
  * Listen on provided port, on all network interfaces.
  */

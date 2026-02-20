@@ -15,9 +15,9 @@ class Certificate {
      * @param {String} studentPK - Public key or public ID of student account 
      */
 
-     //todo: universityPK and studentPK should ideally be public keys. If you can't accomplish this, look into using 
-     // some kind of UUID instead. 
-    constructor(certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK) {
+    //todo: universityPK and studentPK should ideally be public keys. If you can't accomplish this, look into using 
+    // some kind of UUID instead. 
+    constructor(certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK, issuerEmail = "") {
         this.certHash = certHash;
         this.universityPK = universityPK;
         this.studentPK = studentPK;
@@ -25,10 +25,14 @@ class Certificate {
         this.studentSignature = studentSignature;
         this.dateOfIssuing = dateOfIssuing;
         this.certUUID = certUUID;
-        this.dataType = "certificate"
+        this.issuerEmail = issuerEmail;
+        this.dataType = "certificate";
+        this.revoked = false;
+        this.revokedReason = "";
+        this.revokedAt = "";
     }
 
-   
+
 
     /**
      * Instantiate object from json argument. 
@@ -37,9 +41,13 @@ class Certificate {
      */
 
     static deserialize(data) {
-        return new Certificate(data.certHash, data.universitySignature, data.studentSignature, data.dateOfIssuing, data.certUUID, data.universityPK, data.studentPK);
+        const cert = new Certificate(data.certHash, data.universitySignature, data.studentSignature, data.dateOfIssuing, data.certUUID, data.universityPK, data.studentPK, data.issuerEmail);
+        cert.revoked = data.revoked || false;
+        cert.revokedReason = data.revokedReason || "";
+        cert.revokedAt = data.revokedAt || "";
+        return cert;
     }
-    
+
 
     //todo: Add validation of some kind to see that the signatures match and stuff. (LATER)
 }

@@ -2,10 +2,12 @@ const jsrs = require('jsrsasign');
 const { MerkleTree } = require('merkletreejs');
 const SHA256 = require('crypto-js/sha256');
 const chaincode = require('./fabric/chaincode');
-const walletUtil = require('./fabric/wallet-utils');
+const { getEncryptedWallet } = require('./fabric/encrypted-wallet');
+const config = require('../loaders/config');
 const certificates = require('../database/models/certificates');
 
-let ecdsa = new jsrs.ECDSA({'curve': 'secp256r1'});
+let ecdsa = new jsrs.ECDSA({ 'curve': 'secp256r1' });
+let schemaCache = {};
 
 
 /**
@@ -14,16 +16,31 @@ let ecdsa = new jsrs.ECDSA({'curve': 'secp256r1'});
  * @returns {Promise<MerkleTree>}
  */
 async function generateMerkleTree(certData) {
-    let certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
-        ["v1"], true, certData.universityEmail);
+    let cacheKey = certData.universityEmail + "_v1";
+    let certSchema;
+
+    if (schemaCache[cacheKey]) {
+        certSchema = schemaCache[cacheKey];
+    } else {
+        certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
+            ["v1"], true, certData.universityEmail);
+        schemaCache[cacheKey] = certSchema;
+    }
 
     let certDataArray = [];
 
     //certSchema used to order the certificate elements appropriately.
     //ordering[i] = key of i'th item that should go in the certificate array.
-    for (let i = 0; i < certSchema.ordering.length ; i++) {
+    for (let i = 0; i < certSchema.ordering.length; i++) {
         let itemKey = certSchema.ordering[i];
-        certDataArray.push(certData[itemKey]);
+        let value = certData[itemKey];
+
+        // Ensure certUUID is correctly mapped even if coming from Mongoose _id
+        if (itemKey === 'certUUID' && !value) {
+            value = certData._id ? certData._id.toString() : (certData.certUUID || '');
+        }
+
+        certDataArray.push(value);
     }
 
     const mTreeLeaves = certDataArray.map(x => SHA256(x));
@@ -38,8 +55,8 @@ async function generateMerkleTree(certData) {
  * @returns {Promise<string>}
  */
 async function generateMerkleRoot(certData) {
-    let mTree =  await generateMerkleTree(certData)
-     return mTree.getRoot().toString('hex');
+    let mTree = await generateMerkleTree(certData)
+    return mTree.getRoot().toString('hex');
 }
 
 /**
@@ -49,8 +66,22 @@ async function generateMerkleRoot(certData) {
  * @returns {Promise<String>}
  */
 async function createDigitalSignature(stringToSign, signerEmail) {
-    let hexKeyWallet = await walletUtil.loadHexKeysFromWallet(signerEmail);
-    let signedData = ecdsa.signHex(stringToSign, hexKeyWallet.privateKey);
+    const wallet = await getEncryptedWallet(config.fabric.walletPath);
+    const identity = await wallet.get(signerEmail);
+
+    if (!identity) {
+        throw new Error(`Identity for ${signerEmail} not found in wallet`);
+    }
+
+    // Extract private key from X.509 identity
+    const privateKeyPEM = identity.credentials.privateKey;
+
+    // Use jsrsasign to read the PEM and sign
+    let sig = new jsrs.KJUR.crypto.Signature({ "alg": "SHA256withECDSA" });
+    sig.init(privateKeyPEM);
+    sig.updateHex(stringToSign);
+    let signedData = sig.sign();
+
     return signedData;
 }
 
@@ -66,11 +97,12 @@ async function createDigitalSignature(stringToSign, signerEmail) {
  * Output: [2,3]
  *
  */
-function getParamsIndexArray(paramsToShare, ordering){
+function getParamsIndexArray(paramsToShare, ordering) {
 
-    let paramsToShareIndex = paramsToShare.map( (element) => {
+    let paramsToShareIndex = paramsToShare.map((element) => {
         return ordering.findIndex(
-            (orderingElement) => {return orderingElement === element;}) });
+            (orderingElement) => { return orderingElement === element; })
+    });
 
     return paramsToShareIndex;
 }
@@ -87,7 +119,7 @@ async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
     let certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
         ["v1"], true, studentEmail);
 
-    let certificateDBData = await certificates.findOne({"_id" : certUUID});
+    let certificateDBData = await certificates.findOne({ "_id": certUUID });
 
     let mTree = await generateMerkleTree(certificateDBData);
 
@@ -110,14 +142,14 @@ async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
 async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
     let certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
         ["v1"], true, "admin");
-    let certificateDBData = await certificates.findOne({"_id" : certUUID});
+    let certificateDBData = await certificates.findOne({ "_id": certUUID });
     let mTree = await generateMerkleTree(certificateDBData);
 
     //Split disclosedData object into two separate key and value arrays.
     let disclosedDataParamNames = [];
     let disclosedDataValues = [];
 
-    for(let x in disclosedData) {
+    for (let x in disclosedData) {
         disclosedDataParamNames.push(x);
         disclosedDataValues.push(disclosedData[x]);
     }
@@ -135,4 +167,4 @@ async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
 }
 
 
-module.exports = {generateMerkleRoot, createDigitalSignature, generateCertificateProof, verifyCertificateProof};
+module.exports = { generateMerkleRoot, createDigitalSignature, generateCertificateProof, verifyCertificateProof };

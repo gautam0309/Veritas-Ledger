@@ -4,6 +4,18 @@ let apiUrl = location.protocol + '//' + location.host + '/api/';
 
 console.log('at register.js');
 
+// Global CSRF Setup for AJAX
+$.ajaxSetup({
+    beforeSend: function (xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+            const token = $('input[name="_csrf"]').val();
+            if (token) {
+                xhr.setRequestHeader('X-XSRF-Token', token);
+            }
+        }
+    }
+});
+
 //check user input and call server to create dataset
 $('.register-member').click(function () {
 
@@ -112,26 +124,38 @@ $('.register-partner').click(function () {
 
 });
 
-// ========== Password Show/Hide Toggle (hold to show) ==========
+// ========== Password Visibility Toggle (Click to Toggle) ==========
 function setupPasswordToggle(toggleBtnId, inputId) {
     var btn = document.getElementById(toggleBtnId);
     if (!btn) return;
     var input = document.getElementById(inputId);
-    btn.addEventListener('mousedown', function () { input.type = 'text'; });
-    btn.addEventListener('mouseup', function () { input.type = 'password'; });
-    btn.addEventListener('mouseleave', function () { input.type = 'password'; });
-    // Touch support
-    btn.addEventListener('touchstart', function (e) { e.preventDefault(); input.type = 'text'; });
-    btn.addEventListener('touchend', function () { input.type = 'password'; });
+
+    btn.addEventListener('click', function () {
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+
+        // Toggle icon if feather icons are used
+        const icon = btn.querySelector('i');
+        if (icon) {
+            const iconName = type === 'password' ? 'eye' : 'eye-off';
+            icon.setAttribute('data-feather', iconName);
+            if (window.feather) {
+                feather.replace();
+            }
+        }
+    });
 }
 
 $(document).ready(function () {
-    // University form toggles
+    // Registration Toggles
     setupPasswordToggle('toggleUniPass', 'uniPassword');
     setupPasswordToggle('toggleUniPassConfirm', 'uniPasswordConfirm');
-    // Student form toggles
     setupPasswordToggle('toggleStuPass', 'stuPassword');
     setupPasswordToggle('toggleStuPassConfirm', 'stuPasswordConfirm');
+
+    // Login Toggles
+    setupPasswordToggle('toggleUniLoginPass', 'uniLoginPassword');
+    setupPasswordToggle('toggleStuLoginPass', 'stuLoginPassword');
 
     // University password match validation
     $('form[action="/university/register/submit"]').on('submit', function (e) {
@@ -139,7 +163,7 @@ $(document).ready(function () {
         var confirm = $('#uniPasswordConfirm').val();
         if (pass !== confirm) {
             e.preventDefault();
-            $('#uniPassMismatch').show();
+            $('#uniPassMismatch').fadeIn();
             return false;
         }
         $('#uniPassMismatch').hide();
@@ -151,13 +175,13 @@ $(document).ready(function () {
         var confirm = $('#stuPasswordConfirm').val();
         if (pass !== confirm) {
             e.preventDefault();
-            $('#stuPassMismatch').show();
+            $('#stuPassMismatch').fadeIn();
             return false;
         }
         $('#stuPassMismatch').hide();
     });
 
     // Hide mismatch warning on typing
-    $('#uniPasswordConfirm, #uniPassword').on('input', function () { $('#uniPassMismatch').hide(); });
-    $('#stuPasswordConfirm, #stuPassword').on('input', function () { $('#stuPassMismatch').hide(); });
+    $('#uniPasswordConfirm, #uniPassword').on('input', function () { $('#uniPassMismatch').fadeOut(); });
+    $('#stuPasswordConfirm, #stuPassword').on('input', function () { $('#stuPassMismatch').fadeOut(); });
 });

@@ -6,229 +6,139 @@
   <title>Veritas Ledger — Blockchain Academic Certificates</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
-    integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
 
 <body>
-  <%- include('partials/navbar-partial.ejs') %>
-
-    <div class="jumbotron d-flex align-items-center">
-      <div class="container text-center">
-        <p
-          style="font-size: 0.9rem; color: var(--accent-cyan); font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;">
-            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-            <line x1="1" y1="10" x2="23" y2="10"></line>
-          </svg>
-          POWERED BY HYPERLEDGER FABRIC
-        </p>
-        <h1>Tamper-Proof Academic<br>Credentials on Blockchain</h1>
-        <p>A decentralized platform for issuing, managing, and verifying university certificates with cryptographic
-          proof — zero fraud, zero gas fees.</p>
-        <p style="margin-top: 2rem;">
-          <a class="btn btn-primary btn-md" href="/verify" role="button" style="margin-right: 0.5rem;">Verify a
-            Certificate »</a>
-        </p>
-      </div>
+  <div class="app-wrapper">
+    <div class="page-bg-overlay">
+      <div class="bg-grid"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-shape bg-shape-1"></div>
+      <div class="bg-shape bg-shape-2"></div>
+      <div class="bg-shape bg-shape-3"></div>
+      <div class="bg-shape bg-shape-4"></div>
     </div>
 
-    <div class="container marketing" style="padding-bottom: 4rem;">
-      <div class="row d-flex align-items-stretch">
-        <!-- Students Card -->
-        <div class="col-lg-4 text-center d-flex" style="margin-bottom: 1.5rem;">
-          <div class="card w-100" style="padding: 2rem 1.5rem;">
-            <div style="margin-bottom: 1rem;">
-              <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gradStudent" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#667eea" />
-                    <stop offset="100%" style="stop-color:#38f9d7" />
-                  </linearGradient>
-                </defs>
-                <!-- Graduation Cap -->
-                <polygon points="32,8 4,24 32,40 60,24" fill="url(#gradStudent)" opacity="0.9" />
-                <polygon points="32,40 4,24 4,28 32,44 60,28 60,24" fill="url(#gradStudent)" opacity="0.6" />
-                <rect x="52" y="24" width="3" height="20" rx="1.5" fill="url(#gradStudent)" opacity="0.8" />
-                <circle cx="53.5" cy="46" r="4" fill="url(#gradStudent)" opacity="0.5" />
-                <!-- Tassel -->
-                <line x1="32" y1="24" x2="32" y2="36" stroke="url(#gradStudent)" stroke-width="2.5"
-                  stroke-linecap="round" />
-                <circle cx="32" cy="38" r="3" fill="url(#gradStudent)" opacity="0.7" />
-              </svg>
-            </div>
-            <h2 style="font-size: 1.3rem;">Students</h2>
-            <p style="font-size: 0.95rem;">Manage certificates, generate QR codes, and share verifiable proofs with
-              employers.</p>
-            <p>
-              <a class="btn btn-primary btn-sm" href="/student/login" role="button">Sign In »</a>
-              <a class="btn btn-outline-primary btn-sm" href="/student/register" role="button">Register »</a>
-            </p>
-          </div>
-        </div>
+    <%- include('partials/navbar-partial.ejs') %>
 
-        <!-- Universities Card -->
-        <div class="col-lg-4 text-center d-flex" style="margin-bottom: 1.5rem;">
-          <div class="card w-100" style="padding: 2rem 1.5rem;">
-            <div style="margin-bottom: 1rem;">
-              <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gradUni" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#667eea" />
-                    <stop offset="100%" style="stop-color:#764ba2" />
-                  </linearGradient>
-                </defs>
-                <!-- Pediment / Triangle -->
-                <polygon points="32,6 6,26 58,26" fill="url(#gradUni)" opacity="0.9" />
-                <!-- Roof bar -->
-                <rect x="4" y="24" width="56" height="4" rx="1" fill="url(#gradUni)" opacity="0.7" />
-                <!-- Pillars -->
-                <rect x="11" y="30" width="5" height="22" rx="2" fill="url(#gradUni)" opacity="0.65" />
-                <rect x="24" y="30" width="5" height="22" rx="2" fill="url(#gradUni)" opacity="0.65" />
-                <rect x="36" y="30" width="5" height="22" rx="2" fill="url(#gradUni)" opacity="0.65" />
-                <rect x="48" y="30" width="5" height="22" rx="2" fill="url(#gradUni)" opacity="0.65" />
-                <!-- Base -->
-                <rect x="4" y="52" width="56" height="5" rx="1.5" fill="url(#gradUni)" opacity="0.8" />
-                <!-- Circle detail -->
-                <circle cx="32" cy="17" r="4" fill="none" stroke="white" stroke-width="1.5" opacity="0.6" />
-              </svg>
-            </div>
-            <h2 style="font-size: 1.3rem;">Universities</h2>
-            <p style="font-size: 0.95rem;">Issue tamper-proof certificates directly onto the blockchain ledger.</p>
-            <p>
-              <a class="btn btn-primary btn-sm" href="/university/login" role="button">Sign In »</a>
-              <a class="btn btn-outline-primary btn-sm" href="/university/register" role="button">Register »</a>
-            </p>
+      <div class="jumbotron hero-section py-5 px-3">
+        <div class="container text-center">
+          <div class="hero-badge mb-4">
+            <span class="badge badge-pill badge-primary py-2 px-3"
+              style="background: var(--primary-50); color: var(--accent); border: 1px solid var(--primary-100);">
+              <i data-feather="terminal" class="mr-2"></i>
+              POWERED BY HYPERLEDGER FABRIC
+            </span>
           </div>
-        </div>
-
-        <!-- Employers Card -->
-        <div class="col-lg-4 text-center d-flex" style="margin-bottom: 1.5rem;">
-          <div class="card w-100" style="padding: 2rem 1.5rem;">
-            <div style="margin-bottom: 1rem;">
-              <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gradEmployer" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#43e97b" />
-                    <stop offset="100%" style="stop-color:#38f9d7" />
-                  </linearGradient>
-                </defs>
-                <!-- Shield -->
-                <path d="M32 4 L56 14 L56 32 C56 46 44 56 32 60 C20 56 8 46 8 32 L8 14 Z" fill="url(#gradEmployer)"
-                  opacity="0.15" stroke="url(#gradEmployer)" stroke-width="2" />
-                <!-- Checkmark -->
-                <polyline points="20,32 28,42 44,22" fill="none" stroke="url(#gradEmployer)" stroke-width="4"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-            <h2 style="font-size: 1.3rem;">Employers</h2>
-            <p style="font-size: 0.95rem;">Verify certificates instantly using QR codes or roll numbers — no account
-              needed.</p>
-            <p>
-              <a class="btn btn-primary btn-sm" href="/verify" role="button">Verify Now »</a>
-            </p>
+          <h1 class="display-4 font-weight-bold mb-4" style="color: var(--primary); letter-spacing: -0.02em;">
+            The Immutable Standard for<br><span style="color: var(--accent);">Academic Credentials</span>
+          </h1>
+          <p class="lead text-secondary mb-5 mx-auto" style="max-width: 700px;">
+            A decentralized ledger for issuing and verifying university certificates with cryptographic certainty.
+            Secure, transparent, and completely fraud-proof.
+          </p>
+          <div class="hero-btns mt-4 d-flex flex-column flex-md-row justify-content-center align-items-center">
+            <a class="btn btn-primary btn-lg px-5 py-3 shadow-lg mb-3 mb-md-0" href="/verify" role="button"
+              style="border-radius: 30px; font-weight: 700;">
+              Verify a Certificate
+            </a>
+            <a class="btn btn-outline-primary btn-lg px-5 py-3 ml-0 ml-md-3" href="/university/login" role="button"
+              style="border-radius: 30px; font-weight: 700;">
+              University Portal
+            </a>
           </div>
         </div>
       </div>
 
-      <!-- Stats Row -->
-      <div class="row mt-4">
-        <div class="col-12 text-center">
-          <div class="card" style="padding: 2rem;">
-            <div class="row">
-              <div class="col-md-3">
-                <div style="margin-bottom: 0.5rem;">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradStats1)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <defs>
-                      <linearGradient id="gradStats1" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#667eea" />
-                        <stop offset="100%" style="stop-color:#38f9d7" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                </div>
-                <h3
-                  style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                  100%</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Tamper-Proof</p>
+      <div class="container marketing py-5">
+        <div class="row">
+          <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center"
+              style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
+              <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center"
+                style="width: 70px; height: 70px; background: var(--primary-gradient); border-radius: 20px; color: white; box-shadow: 0 10px 20px var(--primary-100);">
+                <i data-feather="book-open"></i>
               </div>
-              <div class="col-md-3">
-                <div style="margin-bottom: 0.5rem;">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradStats2)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <defs>
-                      <linearGradient id="gradStats2" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#667eea" />
-                        <stop offset="100%" style="stop-color:#38f9d7" />
-                      </linearGradient>
-                    </defs>
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
-                </div>
-                <h3
-                  style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                  Zero</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Gas Fees</p>
+              <h3 class="h4 font-weight-bold mb-3">Students</h3>
+              <p class="text-secondary small">Manage certificates, generate QR codes, and share verifiable proofs with
+                employers. Own your academic journey.</p>
+              <div class="mt-auto">
+                <a class="btn btn-primary btn-sm px-4" href="/student/login">Sign In »</a>
               </div>
-              <div class="col-md-3">
-                <div style="margin-bottom: 0.5rem;">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradStats3)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <defs>
-                      <linearGradient id="gradStats3" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#667eea" />
-                        <stop offset="100%" style="stop-color:#38f9d7" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                </div>
-                <h3
-                  style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                  &lt; 2s</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Verification Time</p>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center"
+              style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
+              <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center"
+                style="width: 70px; height: 70px; background: var(--primary-gradient); border-radius: 20px; color: white; box-shadow: 0 10px 20px var(--primary-100);">
+                <i data-feather="award"></i>
               </div>
-              <div class="col-md-3">
-                <div style="margin-bottom: 0.5rem;">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradStats4)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <defs>
-                      <linearGradient id="gradStats4" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#667eea" />
-                        <stop offset="100%" style="stop-color:#38f9d7" />
-                      </linearGradient>
-                    </defs>
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                </div>
-                <h3
-                  style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                  SHA-256</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Encrypted</p>
+              <h3 class="h4 font-weight-bold mb-3">Universities</h3>
+              <p class="text-secondary small">Issue tamper-proof certificates directly onto the blockchain ledger.
+                Automate issuance and eliminate manual verification.</p>
+              <div class="mt-auto">
+                <a class="btn btn-primary btn-sm px-4" href="/university/login">Sign In »</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center"
+              style="border-radius: 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);">
+              <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center"
+                style="width: 70px; height: 70px; background: var(--primary-gradient); border-radius: 20px; color: white; box-shadow: 0 10px 20px var(--primary-100);">
+                <i data-feather="check-circle"></i>
+              </div>
+              <h3 class="h4 font-weight-bold mb-3">Employers</h3>
+              <p class="text-secondary small">Verify credentials instantly using QR codes or roll numbers. No account
+                needed, just pure cryptographic proof.</p>
+              <div class="mt-auto">
+                <a class="btn btn-primary btn-sm px-4" href="/verify">Verify Now »</a>
               </div>
             </div>
           </div>
         </div>
+
+        <div class="stats-card mt-5 p-5 text-center shadow-lg border-0"
+          style="border-radius: 30px; background: var(--primary); color: white;">
+          <div class="row">
+            <div class="col-md-3 mb-4 mb-md-0">
+              <div class="text-accent mb-2" style="color: var(--accent);">
+                <i data-feather="shield"></i>
+              </div>
+              <h4 class="h2 font-weight-bold mb-0">100%</h4>
+              <p class="small opacity-75">Tamper-Proof</p>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+              <div class="text-accent mb-2" style="color: var(--accent);">
+                <i data-feather="zap"></i>
+              </div>
+              <h4 class="h2 font-weight-bold mb-0">Zero</h4>
+              <p class="small opacity-75">Gas Fees</p>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+              <div class="text-accent mb-2" style="color: var(--accent);">
+                <i data-feather="clock"></i>
+              </div>
+              <h4 class="h2 font-weight-bold mb-0">&lt; 2s</h4>
+              <p class="small opacity-75">Verification</p>
+            </div>
+            <div class="col-md-3">
+              <div class="text-accent mb-2" style="color: var(--accent);">
+                <i data-feather="cpu"></i>
+              </div>
+              <h4 class="h2 font-weight-bold mb-0">SHA-256</h4>
+              <p class="small opacity-75">Immutable</p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
-
-
+      <%- include('partials/footer-partial.ejs') %>
+  </div>
 </body>
 
 </html>
-
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
-  integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
-  integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>

@@ -24,7 +24,8 @@ const studentSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        minlength: 2
+        minlength: 2,
+        select: false
     },
 
     publicKey: {  //hex value of key
@@ -38,8 +39,8 @@ const studentSchema = new mongoose.Schema({
 
 studentSchema.statics.saltAndHashPassword = async function (password) {
 
-    return new Promise( (resolve, reject) => {
-        bcrypt.hash(password, 10, function(err, hash) {
+    return new Promise((resolve, reject) => {
+        bcrypt.hash(password, 10, function (err, hash) {
             if (err) {
                 reject(err);
             }
@@ -52,7 +53,7 @@ studentSchema.statics.saltAndHashPassword = async function (password) {
 studentSchema.statics.validateByCredentials = function (email, password) {
     let User = this;
 
-    return User.findOne({email}).then((user) => {
+    return User.findOne({ email }).select('+password').then((user) => {
         if (!user) {
             return Promise.reject();
         }
@@ -72,26 +73,21 @@ studentSchema.statics.validateByCredentials = function (email, password) {
 };
 
 
-studentSchema.pre('save', async function (next) {
+studentSchema.pre('save', async function () {
     let user = this;
-    //isModified(password) returns true if in this database update the password was modified.
-    //We only resalt the password if the password was modified. Otherwise password is already salted.
 
     if (user.isModified('password')) {
-
         try {
-            let hash = await user.schema.statics.saltAndHashPassword(this.password);
+            let hash = await user.constructor.saltAndHashPassword(this.password);
             user.password = hash;
         } catch (e) {
-            return next();
+            throw e;
         }
-    } else {
-        return next();
     }
 });
 
 
-studentSchema.index({"email" : 1}, {unique: true});
+studentSchema.index({ "email": 1 }, { unique: true });
 let students = mongoose.model("students", studentSchema);
 students.createIndexes();
 

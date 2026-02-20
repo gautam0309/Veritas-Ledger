@@ -9,7 +9,7 @@ const walletUtils = require('./wallet-utils');
 const logger = require('../logger');
 
 //Connection Profile;
-const ccp =  JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
 
 /**
  * Enrolls Admin object into wallet.
@@ -23,8 +23,9 @@ async function enrollAdmin() {
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        // Create a new file system based wallet for managing identities.
-        const wallet = await Wallets.newFileSystemWallet(config.fabric.walletPath);
+        // Create a new encrypted file system based wallet for managing identities.
+        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
         const identity = await wallet.get('admin');
         if (identity) {
@@ -49,14 +50,15 @@ async function enrollAdmin() {
  * @returns {Promise<{Keys} | Error>}
  * TODO: There's no way to differentiate students and universities in the MSP this way. Possibly consider changing.
  */
-async function registerUser(email){
+async function registerUser(email) {
     try {
         // Create a new CA client for interacting with the CA.
         const caURL = ccp.certificateAuthorities['ca.org1.example.com'].url;
         const ca = new FabricCAServices(caURL);
 
-        // Create a new file system based wallet for managing identities.
-        const wallet = await Wallets.newFileSystemWallet(config.fabric.walletPath);
+        // Create a new encrypted file system based wallet for managing identities.
+        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
         // Check to see if we've already enrolled the user.
         const userIdentity = await wallet.get(email);
@@ -79,22 +81,28 @@ async function registerUser(email){
         const secret = await ca.register({
             affiliation: 'org1.department1',
             enrollmentID: email,
-            role: 'client'
+            role: 'client',
+            attrs: [
+                { name: 'email', value: email, ecert: true }
+            ]
         }, adminUser);
 
         const enrollment = await ca.enroll({
             enrollmentID: email,
-            enrollmentSecret: secret
+            enrollmentSecret: secret,
+            attr_reqs: [
+                { name: 'email', optional: false }
+            ]
         });
 
         let userKeys = await walletUtils.createNewWalletEntity(enrollment, email);
         logger.info(`Successfully registered and enrolled  user ${email} and imported it into the wallet`);
         return userKeys;
 
-    } catch (error){
+    } catch (error) {
         logger.error(`Failed to register user ${email}": ${error}`);
         throw error;
     }
 }
 
-module.exports = {enrollAdmin, registerUser};
+module.exports = { enrollAdmin, registerUser };

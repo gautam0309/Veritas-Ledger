@@ -1,56 +1,96 @@
-<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-    <a class="navbar-brand" href="/">
-        <%= title %>
-    </a>
-    <!--    TODO: Instead of saying blockchain certificates all the time, consider making it say university, student and shit.-->
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault"
-        aria-controls="navbarsExampleDefault" aria-expanded="false" aria-userName="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+<nav class="navbar navbar-expand-md navbar-light fixed-top">
+    <% if (locals.csrfToken) { %>
+        <meta name="csrf-token" content="<%= csrfToken %>">
+        <script nonce="<%= nonce %>">
+            // Global AJAX Setup for CSRF protection
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof $ !== 'undefined') {
+                    $.ajaxSetup({
+                        headers: {
+                            'X-XSRF-Token': $('meta[name="csrf-token"]').attr('content')
+                        }
+                    });
+                }
+            });
+        </script>
+        <% } %>
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        style="margin-right: 10px; color: var(--accent);">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M8 11h8M12 7v8"></path>
+                    </svg>
+                    Veritas Ledger
+                </a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault"
+                    aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-    <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-        <ul class="navbar-nav mr-auto">
+                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                    <ul class="navbar-nav mr-auto"></ul>
 
-        </ul>
-
-        <ul class="navbar-nav px-3">
-
-            <% if (root==="university" ) { %>
-                <li class="nav-item text-nowrap">
-                    <a class="nav-link" href="/university/dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item text-nowrap">
-                    <a class="nav-link" href="/university/issue">Issue</a>
-                </li>
-                <li class="nav-item text-nowrap">
-                    <a class="nav-link" href="/university/batch-issue">Batch Issue</a>
-                </li>
-                <%} else if (root==="student" ) { %>
-                    <li class="nav-item text-nowrap">
-                        <a class="nav-link" href="/student/dashboard">Dashboard</a>
-                    </li>
-                    <%} %>
-
+                    <ul class="navbar-nav px-3">
                         <% if (logInType==="university" ) { %>
                             <li class="nav-item text-nowrap">
-                                <a class="nav-link" href="/university/logout">Logout</a>
+                                <a class="nav-link" href="/university/dashboard">Dashboard</a>
+                            </li>
+                            <li class="nav-item text-nowrap">
+                                <a class="nav-link" href="/university/issue">Issue</a>
+                            </li>
+                            <li class="nav-item text-nowrap">
+                                <a class="nav-link" href="/university/batch-issue">Batch Issue</a>
+                            </li>
+                            <li class="nav-item text-nowrap">
+                                <a class="nav-link" href="/university/batch-register">Batch Register</a>
                             </li>
                             <%} else if (logInType==="student" ) { %>
                                 <li class="nav-item text-nowrap">
-                                    <a class="nav-link" href="/student/logout">Logout</a>
+                                    <a class="nav-link" href="/student/dashboard">Dashboard</a>
                                 </li>
-                                <%} else { %>
-                                    <li class="nav-item text-nowrap dropdown">
-                                        <a class="nav-link dropdown-toggle " href="#" id="dropdown01"
-                                            data-toggle="dropdown" aria-haspopup="true"
-                                            aria-expanded="false">Sign-in</a>
-                                        <div class="dropdown-menu" aria-labelledby="dropdown01">
-                                            <a class="dropdown-item" href="/university/login">University</a>
-                                            <a class="dropdown-item" href="/student/login">Student</a>
-                                        </div>
-                                    </li>
-                                    <%} %>
+                                <li class="nav-item text-nowrap">
+                                    <a class="nav-link" href="/student/history">History</a>
+                                </li>
+                                <%} %>
 
-        </ul>
-    </div>
+                                    <% if (logInType==="university" ) { %>
+                                        <li class="nav-item text-nowrap">
+                                            <a class="nav-link btn btn-primary px-4 text-white ml-3"
+                                                style="border-radius: 20px; color: white !important;"
+                                                href="/university/logout">Logout</a>
+                                        </li>
+                                        <%} else if (logInType==="student" ) { %>
+                                            <li class="nav-item text-nowrap">
+                                                <a class="nav-link btn btn-primary px-4 text-white ml-3"
+                                                    style="border-radius: 20px; color: white !important;"
+                                                    href="/student/logout">Logout</a>
+                                            </li>
+                                            <%} else { %>
+                                                <li class="nav-item dropdown">
+                                                    <a class="nav-link dropdown-toggle btn btn-primary px-4" href="#"
+                                                        id="dropdown01" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false"
+                                                        style="color: white !important; border-radius: 20px;">Sign
+                                                        In</a>
+                                                    <div class="dropdown-menu dropdown-menu-right shadow-lg border-0"
+                                                        aria-labelledby="dropdown01"
+                                                        style="border-radius: 12px; margin-top: 10px;">
+                                                        <a class="dropdown-item py-2" href="/university/login">
+                                                            <i data-feather="home" class="mr-2"
+                                                                style="width: 16px;"></i>
+                                                            University portal
+                                                        </a>
+                                                        <a class="dropdown-item py-2" href="/student/login">
+                                                            <i data-feather="user" class="mr-2"
+                                                                style="width: 16px;"></i>
+                                                            Student portal
+                                                        </a>
+                                                    </div>
+                                                </li>
+                                                <%} %>
+                    </ul>
+                </div>
+            </div>
 </nav>

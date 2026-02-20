@@ -36,7 +36,8 @@ const universitySchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        minlength: 2
+        minlength: 2,
+        select: false
     },
 
     publicKey: {   //hex value of key
@@ -49,8 +50,8 @@ const universitySchema = new mongoose.Schema({
 
 universitySchema.statics.saltAndHashPassword = async function (password) {
 
-    return new Promise( (resolve, reject) => {
-        bcrypt.hash(password, 10, function(err, hash) {
+    return new Promise((resolve, reject) => {
+        bcrypt.hash(password, 10, function (err, hash) {
             if (err) {
                 reject(err);
             }
@@ -65,7 +66,7 @@ universitySchema.statics.saltAndHashPassword = async function (password) {
 universitySchema.statics.validateByCredentials = function (email, password) {
     let User = this;
 
-    return User.findOne({email}).then((user) => {
+    return User.findOne({ email }).select('+password').then((user) => {
         if (!user) {
             return Promise.reject();
         }
@@ -85,26 +86,21 @@ universitySchema.statics.validateByCredentials = function (email, password) {
 };
 
 
-universitySchema.pre('save', async function (next) {
+universitySchema.pre('save', async function () {
     let user = this;
-    //isModified(password) returns true if in this database update the password was modified.
-    //We only resalt the password if the password was modified. Otherwise password is already salted.
 
     if (user.isModified('password')) {
-
         try {
-            let hash = await user.schema.statics.saltAndHashPassword(this.password);
+            let hash = await user.constructor.saltAndHashPassword(this.password);
             user.password = hash;
         } catch (e) {
-            return next();
+            throw e;
         }
-    } else {
-        return next();
     }
 });
 
 
-universitySchema.index({"email" : 1}, {unique: true});
+universitySchema.index({ "email": 1 }, { unique: true });
 let universities = mongoose.model("universities", universitySchema);
 universities.createIndexes();  //idempotent operation. Only called once.  (Calling createIndex manually like this is perfectly fine if autoIndex is turned off)
 

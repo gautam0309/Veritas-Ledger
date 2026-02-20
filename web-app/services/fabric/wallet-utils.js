@@ -1,4 +1,4 @@
-const {Wallets} = require('fabric-network');
+const { Wallets } = require('fabric-network');
 const config = require('../../loaders/config');
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +11,8 @@ const logger = require('../logger');
  * @returns {Promise<{} | Error>} public and private key in hex format;
  */
 async function createNewWalletEntity(enrollmentObject, userName) {
-    const wallet = await Wallets.newFileSystemWallet(config.fabric.walletPath);
+    const { getEncryptedWallet } = require('./encrypted-wallet');
+    const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
     const x509Identity = {
         credentials: {
@@ -30,43 +31,14 @@ async function createNewWalletEntity(enrollmentObject, userName) {
         userName: userName
     };
 
-    let hexDataString = JSON.stringify(hexKeyEntity, null, 4);
-
-    await Promise.all([
-        wallet.put(userName, x509Identity),
-        fs.writeFile(path.join(config.fabric.walletPath, `${userName}.json`), hexDataString,
-            (err) => { if (err) throw err})
-    ]);
+    await wallet.put(userName, x509Identity);
 
     return hexKeyEntity;
 }
 
 /**
- * Load the hex form of public and private keys from wallet folder.
- * @param email
- * @returns eg -{
-    "publicKey": "049d4ece36818123e42346c76847a69cc87eea3a61330024a1f....8",
-    "privateKey": "b3a4ad5b9aecda932f304bf4b566715eb26fe3d006729b79d7c454e18b861cb9",
-    "userName": "Noobsaibot53@yahoo.com"
-}
+ * Note: loadHexKeysFromWallet was removed as it relied on insecure cleartext JSON storage.
+ * Digital signatures and key management should be handled through the Fabric Network SDK.
  */
-function loadHexKeysFromWallet(email) {
-    try {
-        let filePath = path.join(config.fabric.walletPath, email +".json");
 
-        if (!fs.existsSync(filePath)) {
-            logger.error(`User ${email} does not exist in wallet`);
-            return null;
-        }
-
-        let rawData = fs.readFileSync(path.join(config.fabric.walletPath, email +".json"));
-        return JSON.parse(rawData);
-    } catch (e) {
-        logger.error("Error in loadHexKeysFromWallet for username " + email);
-        logger.error(e);
-        return null;
-    }
-}
-
-
-module.exports = {createNewWalletEntity, loadHexKeysFromWallet};
+module.exports = { createNewWalletEntity };

@@ -6,97 +6,139 @@
   <title>Blockchain Certificate</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
-    integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
 <body>
-  <%- include('partials/navbar-partial.ejs') %>
 
-    <!--Name, Public Key, Location, Description, Password, Email-->
+  <!--Name, Public Key, Location, Description, Password, Email-->
 
-    <div class="row justify-content-center form-all">
-      <div class="col-md-6">
-        <div class="card">
-          <header class="card-header">
-            <h4 class="card-title mt-2">University Sign up</h4>
-          </header>
-          <article class="card-body">
-
-            <form action="/university/register/submit" method="POST">
-              <div class="form-row">
-                <div class="col form-group">
-                  <userName>University Name </userName>
-                  <input name="name" required type="text" class="form-control" placeholder="">
-                </div> <!-- form-group end.// -->
-                <div class="col form-group">
-                  <userName>Email</userName>
-                  <input name="email" required type="email" class="form-control" placeholder=" ">
-                </div> <!-- form-group end.// -->
-              </div> <!-- form-row end.// -->
-              <div class="form-group">
-                <userName>Description</userName>
-                <textarea name="description" required class="form-control" rows="3"
-                  placeholder="Brief description of the university"></textarea>
-              </div> <!-- form-group end.// -->
-              <!-- form-group end.// -->
-              <div class="form-row">
-                <div class="form-group col-md-6">
-                  <userName>Location</userName>
-                  <input name="location" required type="text" class="form-control">
-                </div> <!-- form-group end.// -->
-                <div class="form-group col-md-6">
-                  <userName>Country</userName>
-                  <input type="text" class="form-control" value="India" readonly>
-                  <input type="hidden" name="country" value="India">
-                </div> <!-- form-group end.// -->
-              </div> <!-- form-row.// -->
-              <div class="form-group">
-                <userName>Create Password</userName>
-                <div class="input-group">
-                  <input name="password" id="uniPassword" required class="form-control" type="password" minlength="6">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="button" id="toggleUniPass"
-                      style="cursor:pointer;">&#128065;</button>
-                  </div>
-                </div>
-              </div> <!-- form-group end.// -->
-              <div class="form-group">
-                <userName>Confirm Password</userName>
-                <div class="input-group">
-                  <input id="uniPasswordConfirm" required class="form-control" type="password" minlength="6">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="button" id="toggleUniPassConfirm"
-                      style="cursor:pointer;">&#128065;</button>
-                  </div>
-                </div>
-                <small id="uniPassMismatch" class="text-danger" style="display:none;">Passwords do not match.</small>
-              </div> <!-- form-group end.// -->
-              <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-block"> Register </button>
-              </div> <!-- form-group// -->
-              <small class="text-muted">By clicking the 'Sign Up' button, you confirm that you accept our Terms of use
-                and Privacy Policy.</small>
-            </form>
-          </article> <!-- card-body end .// -->
-          <div class="border-top card-body text-center">Have an account? <a href="/university/login">Log In</a></div>
-        </div> <!-- card.// -->
-      </div> <!-- col.//-->
-
-    </div> <!-- row.//-->
-
-
+  <div class="app-wrapper">
+    <div class="page-bg-overlay">
+      <div class="bg-grid"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-shape bg-shape-1"></div>
+      <div class="bg-shape bg-shape-2"></div>
     </div>
-    <!--container end.//-->
 
+    <%- include('partials/navbar-partial.ejs') %>
 
+      <div class="auth-section py-5">
+        <div class="auth-container" style="max-width: 600px;">
+          <div class="auth-logo mb-4">
+            <div class="logo-box mx-auto d-flex align-items-center justify-content-center"
+              style="width: 60px; height: 60px; background: var(--primary-gradient); border-radius: 15px; color: white;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M8 11h8M12 7v8"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="auth-header text-center mb-4">
+            <h1 class="h3 font-weight-bold" style="color: var(--primary);">University Sign up</h1>
+            <p class="text-secondary small">Join the decentralized academic network.</p>
+          </div>
+
+          <div class="auth-tabs d-flex mb-4" style="border-bottom: 2px solid var(--border-light);">
+            <a href="/university/login" class="auth-tab flex-grow-1 text-center py-2"
+              style="font-weight: 600; color: var(--text-secondary); text-decoration: none;">Login</a>
+            <a href="/university/register" class="auth-tab active flex-grow-1 text-center py-2"
+              style="font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent); text-decoration: none;">Signup</a>
+          </div>
+
+          <article class="auth-body">
+            <% if (typeof error !=='undefined' && error) { %>
+              <div class="alert alert-danger" role="alert" style="border-radius: 12px;">
+                <strong>Error:</strong>
+                <%= error %>
+              </div>
+              <% } %>
+
+                <form action="/university/register/submit" method="POST">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <div class="form-row">
+                    <div class="col form-group mb-3">
+                      <label class="small font-weight-bold text-secondary">University Name</label>
+                      <input name="name" required type="text" class="form-control" placeholder="Enter university name"
+                        style="border-radius: 10px;">
+                    </div>
+                    <div class="col form-group mb-3">
+                      <label class="small font-weight-bold text-secondary">Admin Email</label>
+                      <input name="email" required type="email" class="form-control" placeholder="admin@university.edu"
+                        style="border-radius: 10px;">
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-secondary">Description</label>
+                    <textarea name="description" required class="form-control" rows="2"
+                      placeholder="Brief description of the university" style="border-radius: 10px;"></textarea>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group col-md-6 mb-3">
+                      <label class="small font-weight-bold text-secondary">Location</label>
+                      <input name="location" required type="text" class="form-control" placeholder="City"
+                        style="border-radius: 10px;">
+                    </div>
+                    <div class="form-group col-md-6 mb-3">
+                      <label class="small font-weight-bold text-secondary">Country</label>
+                      <input type="text" class="form-control" value="India" readonly
+                        style="border-radius: 10px; background: var(--bg-secondary);">
+                      <input type="hidden" name="country" value="India">
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-secondary">Password</label>
+                    <div class="input-group">
+                      <input name="password" id="uniPassword" required class="form-control" type="password"
+                        minlength="8" placeholder="••••••••"
+                        style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
+                      <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="toggleUniPass"
+                          style="border-top-right-radius: 10px; border-bottom-right-radius: 10px; background: var(--bg-secondary); border-color: var(--border-light);">
+                          <i data-feather="eye"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Min. 8 chars, 1 uppercase, 1 lowercase, 1 number</small>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-secondary">Confirm Password</label>
+                    <div class="input-group">
+                      <input name="passwordConfirm" id="uniPasswordConfirm" required class="form-control"
+                        type="password" minlength="8" placeholder="••••••••"
+                        style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
+                      <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="toggleUniPassConfirm"
+                          style="border-top-right-radius: 10px; border-bottom-right-radius: 10px; background: var(--bg-secondary); border-color: var(--border-light);">
+                          <i data-feather="eye"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <small id="uniPassMismatch" class="text-danger mt-1" style="display: none;">Passwords do not
+                      match</small>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-block py-3 font-weight-bold shadow-sm mt-4"
+                    style="border-radius: 12px;">Initialize Ledger Account</button>
+                </form>
+          </article>
+
+          <div class="auth-footer text-center mt-4">
+            <a href="/" class="back-link-modern"><i data-feather="arrow-left"></i> Back to Homepage</a>
+          </div>
+        </div>
+      </div>
+
+      <%- include('partials/footer-partial.ejs') %>
+  </div>
 </body>
 
 </html>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
-  integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
-  integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
-<script src="/js/register.js"></script>
+<script nonce="<%= nonce %>" src="/js/register.js"></script>

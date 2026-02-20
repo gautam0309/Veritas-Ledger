@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Batch Issue Certificates</title>
+    <title>Batch Student Registration - Veritas Ledger</title>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
@@ -21,15 +21,20 @@
             <div class="container py-5" style="position: relative; z-index: 10;">
                 <div class="auth-container mx-auto" style="max-width: 800px;">
                     <div class="auth-header text-center mb-4">
-                        <h1 class="h3 font-weight-bold" style="color: var(--primary);">Batch Issue Certificates (CSV
-                            Upload)
-                        </h1>
+                        <div class="logo-box mx-auto d-flex align-items-center justify-content-center mb-3"
+                            style="width: 60px; height: 60px; background: var(--primary-gradient); border-radius: 15px; color: white;">
+                            <i data-feather="users" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <h1 class="h3 font-weight-bold" style="color: var(--primary);">Batch Student Registration</h1>
+                        <p class="text-secondary small">Register multiple students at once using a CSV file. New student
+                            accounts will be initialized on the blockchain.</p>
                     </div>
-                    <article class="auth-body">
 
+                    <article class="auth-body">
                         <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
                             <div class="alert alert-danger" role="alert"
-                                style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #f85149; border-radius: 12px;">
+                                style="background: rgba(220, 38, 38, 0.05); border-color: rgba(220, 38, 38, 0.2); color: #dc2626; border-radius: 12px;">
+                                <i data-feather="alert-circle" class="mr-2" style="width: 18px;"></i>
                                 <strong>Error:</strong>
                                 <%= errorMessage %>
                             </div>
@@ -39,24 +44,22 @@
                                     style="background: var(--bg-secondary); border-radius: 15px; border: 1px solid var(--border-light);">
                                     <h6 class="font-weight-bold mb-3" style="color: var(--primary);">CSV Format
                                         Requirements:</h6>
-                                    <p class="text-muted small">Your CSV file must have the following columns (first row
-                                        as headers):</p>
+                                    <p class="text-muted small">The first row must be headers. Required columns:</p>
                                     <code
                                         style="display: block; padding: 12px; background: white; border-radius: 8px; color: var(--primary); font-family: monospace; border: 1px solid var(--border-light);">
-                            studentName, studentEmail, rollNumber, major, department, cgpa, date
+                            studentName, studentEmail, password (optional)
                         </code>
                                     <p class="text-muted small mt-3 mb-0">
-                                        <strong>Example row:</strong> John Doe, john@email.com, 2301201182, Computer
-                                        Science, CSE, 8.5, 2024-06-15
+                                        <strong>Note:</strong> If password is not provided, it defaults to
+                                        <code>TempPass123!</code>.
                                     </p>
                                 </div>
 
-                                <form action="/university/batch-issue" method="POST" enctype="multipart/form-data"
-                                    class="mb-4"
-                                    onsubmit="document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').innerHTML = '<span class=\'spinner-border spinner-border-sm\' role=\'status\' aria-hidden=\'true\'></span> Processing... Please wait';">
+                                <form action="/university/batch-register" method="POST" enctype="multipart/form-data"
+                                    class="mb-4">
                                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <div class="form-group mb-4">
-                                        <label class="small font-weight-bold text-secondary">Upload CSV File</label>
+                                        <label class="small font-weight-bold text-secondary">Select CSV File</label>
                                         <div class="custom-file">
                                             <input name="csvFile" type="file" class="custom-file-input" id="csvFile"
                                                 accept=".csv" required>
@@ -64,14 +67,17 @@
                                                 style="border-radius: 10px;">Choose file...</label>
                                         </div>
                                     </div>
-                                    <button type="submit" id="submitBtn"
+                                    <button type="submit"
                                         class="btn btn-primary btn-block py-3 font-weight-bold shadow-sm"
-                                        style="border-radius: 12px;">Process & Issue Certificates</button>
+                                        style="border-radius: 12px;">
+                                        <i data-feather="upload-cloud" class="mr-2" style="width: 20px;"></i> Start Bulk
+                                        Registration
+                                    </button>
                                 </form>
 
                                 <% if (typeof results !=='undefined' && results && results.length> 0) { %>
                                     <div class="results-section mt-5">
-                                        <h5 class="font-weight-bold mb-3" style="color: var(--primary);">Batch Results
+                                        <h5 class="font-weight-bold mb-3" style="color: var(--primary);">Process Results
                                         </h5>
                                         <div class="table-responsive"
                                             style="max-height: 400px; overflow-y: auto; border-radius: 15px; border: 1px solid var(--border-light);">
@@ -79,7 +85,7 @@
                                                 <thead style="background: var(--bg-secondary);">
                                                     <tr>
                                                         <th class="border-0">#</th>
-                                                        <th class="border-0">Student</th>
+                                                        <th class="border-0">Student Name</th>
                                                         <th class="border-0">Status</th>
                                                         <th class="border-0">Message</th>
                                                     </tr>
@@ -109,11 +115,10 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <% let successCount=results.filter(r=> r.status === 'success').length;
-                                            let failCount = results.length - successCount;
-                                            %>
-                                            <div class="d-flex justify-content-between align-items-center mt-3 p-3"
-                                                style="background: var(--bg-secondary); border-radius: 10px;">
+
+                                        <div class="d-flex justify-content-between align-items-center mt-3 p-3"
+                                            style="background: var(--bg-secondary); border-radius: 10px;">
+                                            <% let successCount=results.filter(r=> r.status === 'success').length; %>
                                                 <p class="mb-0 small font-weight-bold">Total: <%= results.length %>
                                                 </p>
                                                 <div>
@@ -121,29 +126,36 @@
                                                         <%= successCount %> Succeeded
                                                     </span>
                                                     <span class="badge badge-danger">
-                                                        <%= failCount %> Failed
+                                                        <%= results.length - successCount %> Failed
                                                     </span>
                                                 </div>
-                                            </div>
+                                        </div>
                                     </div>
                                     <% } %>
                     </article>
+
+                    <div class="auth-footer text-center mt-4">
+                        <a href="/university/dashboard" class="back-link-modern"><i data-feather="arrow-left"></i> Back
+                            to Dashboard</a>
+                    </div>
                 </div>
             </div>
+
+            <%- include('partials/footer-partial.ejs') %>
     </div>
 
+    <script nonce="<%= nonce %>" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script nonce="<%= nonce %>" src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        crossorigin="anonymous"></script>
+    <script nonce="<%= nonce %>" src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+        crossorigin="anonymous"></script>
+    <script nonce="<%= nonce %>">
+        // Update file label on selection
+        $('#csvFile').on('change', function () {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').addClass("selected").html(fileName);
+        });
+    </script>
 </body>
 
 </html>
-<script nonce="<%= nonce %>" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script nonce="<%= nonce %>" src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-    crossorigin="anonymous"></script>
-<script nonce="<%= nonce %>" src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
-    crossorigin="anonymous"></script>
-<script nonce="<%= nonce %>">
-    // Update file label on selection
-    $('#csvFile').on('change', function () {
-        var fileName = $(this).val().split('\\').pop();
-        $(this).next('.custom-file-label').addClass("selected").html(fileName);
-    });
-</script>

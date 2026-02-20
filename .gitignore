@@ -43,3 +43,4 @@ logs/
 fabricate_history.py
 .project-version
 .git.bak/
+*.csv

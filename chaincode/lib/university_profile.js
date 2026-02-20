@@ -4,22 +4,24 @@
 
 
 class UniversityProfile {
-   /**
-    * Public profile of a university
-    * @param {String} name 
-    * @param {String} publicKey 
-    * @param {String} location 
-    * @param {String} description 
-    */
-    constructor(name, publicKey, location, description){
+    /**
+     * Public profile of a university
+     * @param {String} name 
+     * @param {String} publicKey 
+     * @param {String} location 
+     * @param {String} description 
+     * @param {String} email
+     */
+    constructor(name, publicKey, location, description, email = "") {
         this.name = name;
         this.publicKey = publicKey;
         this.location = location;
         this.description = description;
+        this.email = email;
         this.dataType = "university"
     }
 
-   
+
 
     /**
      * Instantiate object from json argument. 
@@ -28,7 +30,7 @@ class UniversityProfile {
      */
 
     static deserialize(data) {
-        return new UniversityProfile(data.name, data.publicKey, data.location, data.description);
+        return new UniversityProfile(data.name, data.publicKey, data.location, data.description, data.email);
     }
 }
 

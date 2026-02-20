@@ -1,7 +1,7 @@
 //Import Hyperledger Fabric 1.4 programming model - fabric-network
 'use strict';
 
-const {  Gateway, Wallets } = require('fabric-network');
+const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
 const fs = require('fs');
 const config = require("../../loaders/config");
@@ -20,7 +20,8 @@ const util = require('util');
 async function connectToNetwork(userEmail) {
 
     let ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
-    let wallet = await Wallets.newFileSystemWallet(config.fabric.walletPath);
+    const { getEncryptedWallet } = require('./encrypted-wallet');
+    let wallet = await getEncryptedWallet(config.fabric.walletPath);
 
     const identity = await wallet.get(userEmail);
     if (!identity) {
@@ -32,7 +33,7 @@ async function connectToNetwork(userEmail) {
     const gateway = new Gateway();
     await gateway.connect(ccp, { wallet, identity: userEmail, discovery: { enabled: true, asLocalhost: true } });
 
-    const network =  await gateway.getNetwork(config.fabric.channelName);
+    const network = await gateway.getNetwork(config.fabric.channelName);
     const contract = network.getContract(config.fabric.chaincodeName);
 
     return {
@@ -47,10 +48,12 @@ async function connectToNetwork(userEmail) {
  * @param {String} func - The chaincode function to call
  * @param {[String]} args - Arguments to chaincode function
  * @param {Boolean} isQuery - True if query function, False if transaction function
- * @param {String} userEmail - Email of fabric user that invokes chaincode. Must be enrolled and have entity in wallet.
+ * @param {String} userEmail - Email of fabric user that invokes chaincode.
+ * @param {Number} retryCount - Current attempt number
  * @returns {Promise<JSON>} Data returned from ledger in Object format
  */
-async function invokeChaincode( func, args, isQuery, userEmail) {
+async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
+    const MAX_RETRIES = 3;
     try {
         let networkObj = await connectToNetwork(userEmail);
         logger.debug('inside invoke');
@@ -110,10 +113,19 @@ async function invokeChaincode( func, args, isQuery, userEmail) {
         }
 
     } catch (error) {
-        logger.error(`Failed to submit transaction: ${error}`);
+        // Category 2 Fix: Handle MVCC_READ_CONFLICT (Error 10/14) and retry
+        const isMvccConflict = error.message && (error.message.includes('MVCC_READ_CONFLICT') || error.message.includes('Phantom read conflict'));
+
+        if (isMvccConflict && retryCount < MAX_RETRIES) {
+            logger.warn(`MVCC read conflict detected for ${func}. Retrying in ${Math.pow(2, retryCount) * 100}ms... (Attempt ${retryCount + 1})`);
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
+            return invokeChaincode(func, args, isQuery, userEmail, retryCount + 1);
+        }
+
+        logger.error(`Failed to submit transaction: ${error.message || error}`);
         throw error;
     }
 }
 
 
-module.exports = {invokeChaincode};
+module.exports = { invokeChaincode };
