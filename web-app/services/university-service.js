@@ -83,3 +83,5 @@ async function revokeCertificateOnChain(certUUID, reason, universityEmail) {
 
 module.exports = { issueCertificate, getCertificateDataforDashboard, revokeCertificateOnChain };
 /* minor update: 2026-02-21 13:51:02 */
+
+/* minor update: 2026-02-21 18:42:53 */
