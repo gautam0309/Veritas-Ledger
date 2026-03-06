@@ -43,8 +43,13 @@ async function generateMerkleTree(certData) {
         certDataArray.push(value);
     }
 
-    const mTreeLeaves = certDataArray.map(x => SHA256(x));
-    const mTree = new MerkleTree(mTreeLeaves, SHA256);
+    function hashFn(x) {
+        return Buffer.from(SHA256(x).toString(), 'hex');
+    }
+
+    const mTreeLeaves = certDataArray.map(x => hashFn(x.toString()));
+
+    const mTree = new MerkleTree(mTreeLeaves, hashFn);
 
     return mTree;
 }
@@ -126,7 +131,12 @@ async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
     //get the index or "ordering" of the data to share in the pre defined schema.
     let paramsToShareIndex = getParamsIndexArray(paramsToShare, certSchema.ordering);
 
-    let multiProof = mTree.getMultiProof(mTree.getHexLayersFlat(), paramsToShareIndex);
+    // Sort ascending, otherwise getMultiProof might throw or return corrupted proofs
+    // merkletreejs getMultiProof expects indices to be sorted strictly in ascending order.
+    // We must sort the paramsToShareIndex here because they might be requested out of order.
+    let sortedIndices = [...paramsToShareIndex].sort((a, b) => a - b);
+
+    let multiProof = mTree.getMultiProof(mTree.getHexLayersFlat(), sortedIndices);
 
     return multiProof;
 }
@@ -157,10 +167,31 @@ async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
     let paramsToShareIndex = getParamsIndexArray(disclosedDataParamNames, certSchema.ordering);
 
     let mTreeRoot = mTree.getRoot();
-    let disclosedDataHash = disclosedDataValues.map(x => SHA256(x));
-    //let verificationSuccess = mTree.verifyMultiProof(mTreeRoot, paramsToShareIndex, disclosedDataHash, mTree.getDepth(), mTreeProof );
 
-    let verificationSuccess = mTree.verifyMultiProof(mTreeRoot, paramsToShareIndex, disclosedDataHash, mTree.getDepth(), mTreeProof);
+    // The hashed pairs must be formatted exactly as expected by merkletreejs
+    let hashIndexPairs = paramsToShareIndex.map((index, i) => {
+        let hashWordArr = SHA256(disclosedDataValues[i].toString());
+        return {
+            index: index,
+            hash: Buffer.from(hashWordArr.toString(), 'hex')
+        };
+    });
+
+    // Sort the hashIndexPairs by index to ensure sortedIndices and sortedHashes are in ascending order of index
+    // This is required by merkletreejs.verifyMultiProof
+    hashIndexPairs.sort((a, b) => a.index - b.index);
+
+    let sortedIndices = hashIndexPairs.map(p => p.index);
+    let sortedHashes = hashIndexPairs.map(p => p.hash);
+
+    let mTreeDepth = mTree.getDepth();
+
+    if (!mTreeProof || !Array.isArray(mTreeProof)) {
+        console.log("Verification failed: Invalid or missing proof array.");
+        return false;
+    }
+
+    let verificationSuccess = mTree.verifyMultiProof(mTreeRoot, sortedIndices, sortedHashes, mTreeDepth, mTreeProof);
 
     console.log("Verification status: " + verificationSuccess);
     return verificationSuccess;

@@ -33,9 +33,7 @@
                                     <h6 style="color: #38f9d7;">CSV Format Requirements:</h6>
                                     <p class="text-muted small">Your CSV file must have the following header:</p>
                                     <code
-                                        style="display: block; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; color: #667eea;">
-                            rollNumber
-                        </code>
+                                        style="display: block; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; color: #667eea;">rollNumber</code>
                                     <p class="text-muted small mt-2">
                                         <strong>Example:</strong><br>
                                         rollNumber<br>
@@ -70,28 +68,28 @@
                                             </thead>
                                             <tbody>
                                                 <% results.forEach(function(r, idx) { %>
-                                                    <tr
-                                                        style="<%= r.status === 'success' ? 'color: #38f9d7;' : 'color: #f85149;' %>">
-                                                        <td>
-                                                            <%= idx + 1 %>
-                                                        </td>
-                                                        <td>
-                                                            <%= r.rollNumber %>
-                                                        </td>
-                                                        <td>
-                                                            <%= r.status==='success' ? '✓ Valid' : '✗ Invalid' %>
-                                                        </td>
-                                                        <td>
-                                                            <% if (r.status==='success' ) { %>
-                                                                <small class="text-muted">
-                                                                    <%= r.details %>
-                                                                </small>
-                                                                <% } else { %>
-                                                                    <%= r.message %>
-                                                                        <% } %>
-                                                        </td>
-                                                    </tr>
-                                                    <% }); %>
+                                                    <% let rowColor=r.status==='success' ? '#38f9d7' : '#f85149' ; %>
+                                                        <tr style="<%- 'color: ' + rowColor + ';' %>">
+                                                            <td>
+                                                                <%= idx + 1 %>
+                                                            </td>
+                                                            <td>
+                                                                <%= r.rollNumber %>
+                                                            </td>
+                                                            <td>
+                                                                <%= r.status==='success' ? '✓ Valid' : '✗ Invalid' %>
+                                                            </td>
+                                                            <td>
+                                                                <% if (r.status==='success' ) { %>
+                                                                    <small class="text-muted">
+                                                                        <%= r.details %>
+                                                                    </small>
+                                                                    <% } else { %>
+                                                                        <%= r.message %>
+                                                                            <% } %>
+                                                            </td>
+                                                        </tr>
+                                                        <% }); %>
                                             </tbody>
                                         </table>
                                     </div>

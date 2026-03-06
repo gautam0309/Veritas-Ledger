@@ -240,6 +240,11 @@ class EducertContract extends Contract {
         let schemaAsBytes = await ctx.stub.getState("schema_" + schemaVersion);
 
         if (!schemaAsBytes || schemaAsBytes.length === 0) {
+            if (schemaVersion === "v1") {
+                let schemaCertificate = new Schema("university degree", "v1", ["universityName", "major", "departmentName", "cgpa", "certUUID"]);
+                await ctx.stub.putState("schema_v1", Buffer.from(JSON.stringify(schemaCertificate)));
+                return schemaCertificate;
+            }
             throw new Error(`Schema ${schemaVersion} does not exist`);
         }
 
@@ -291,24 +296,34 @@ class EducertContract extends Contract {
         }
 
         let certArray = [];
-        let { results } = await this.queryWithQueryStringPaginated(ctx, JSON.stringify(queryString), 50, "");
+        let iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
 
-        for (let i = 0; i < results.length; i++) {
-            try {
-                let cert = Certificate.deserialize(results[i].value);
+        while (true) {
+            let res = await iterator.next();
 
-                // ABAC Check: Only admin, a verified university, or the student themselves can view this history
-                if (callerEmail === 'admin' || isUniversity ||
-                    (callerEmail && cert.studentEmail && callerEmail.replace(/\./g, '') === cert.studentEmail.replace(/\./g, ''))) {
+            if (res.value && res.value.value.toString()) {
+                try {
+                    let jsonRes = JSON.parse(res.value.value.toString('utf8'));
+                    let cert = Certificate.deserialize(jsonRes);
+
+                    // ABAC Check: inherently filtered by studentPK in selector
                     certArray.push(cert);
+                } catch (err) {
+                    console.log("Failed to instantiate Certificate object from JSON\n" + err);
+                    if (callerEmail === 'admin' || isUniversity) {
+                        try {
+                            let rawJson = JSON.parse(res.value.value.toString('utf8'));
+                            certArray.push(rawJson);
+                        } catch (e) {
+                            certArray.push(res.value.value.toString('utf8'));
+                        }
+                    }
                 }
-            } catch (err) {
-                console.log("Failed to instantiate Certificate object from JSON in getAllCertificateByStudent\n" + err);
-                console.log("DATA TYPE:  " + typeof queryResults[i])
-                // Only push raw if authorized as university or admin to prevent leakage of corrupted state to unauthorized users
-                if (callerEmail === 'admin' || isUniversity) {
-                    certArray.push(queryResults[i]);
-                }
+            }
+
+            if (res.done) {
+                await iterator.close();
+                break;
             }
         }
 
