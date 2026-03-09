@@ -30,9 +30,9 @@ logger.stream = split().on('data', function (line) {
 
 
 
-// testing format of error. Check this before fucking around with the morgan loaders :'3
-// const error = new Error('Testing Error');
-// logger.error(error);
-// logger.error('An error occurred:', error);
+
+
+
+
 
 module.exports = logger;
