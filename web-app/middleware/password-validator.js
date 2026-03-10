@@ -1,4 +1,4 @@
-// Reusable middleware to enforce strong passwords consistently via express-validator
+
 const { body, validationResult } = require('express-validator');
 
 const validatePasswordRules = () => {
