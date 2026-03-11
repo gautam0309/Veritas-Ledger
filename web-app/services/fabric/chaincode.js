@@ -1,4 +1,4 @@
-//Import Hyperledger Fabric 1.4 programming model - fabric-network
+
 'use strict';
 
 const { Gateway, Wallets } = require('fabric-network');
@@ -12,11 +12,7 @@ const logger = require("../logger");
 const util = require('util');
 
 
-/**
- * Do all initialization needed to invoke chaincode
- * @param userEmail
- * @returns {Promise<{contract: Contract, gateway: Gateway, network: Network} | Error>} Network objects needed to interact with chaincode
- */
+
 async function connectToNetwork(userEmail) {
 
     let ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
@@ -42,16 +38,7 @@ async function connectToNetwork(userEmail) {
 
 }
 
-/**
- * Invoke any chaincode using fabric sdk
- *
- * @param {String} func - The chaincode function to call
- * @param {[String]} args - Arguments to chaincode function
- * @param {Boolean} isQuery - True if query function, False if transaction function
- * @param {String} userEmail - Email of fabric user that invokes chaincode.
- * @param {Number} retryCount - Current attempt number
- * @returns {Promise<JSON>} Data returned from ledger in Object format
- */
+
 async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
     const MAX_RETRIES = 3;
     try {
@@ -108,7 +95,7 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
         }
 
     } catch (error) {
-        // Category 2 Fix: Handle MVCC_READ_CONFLICT (Error 10/14) and retry
+        
         const isMvccConflict = error.message && (error.message.includes('MVCC_READ_CONFLICT') || error.message.includes('Phantom read conflict'));
 
         if (isMvccConflict && retryCount < MAX_RETRIES) {
