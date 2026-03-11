@@ -47,7 +47,7 @@ router.post('/login/submit', limiter.strictRateLimiterMiddleware, csrfProtection
 
 router.get('/logout', universityController.logOutAndRedirect);
 
-// New routes for enhancements
+
 router.get('/api/analytics', universityMiddleware.authenticateLogin, universityController.getAnalyticsData);
 router.post('/revoke', universityMiddleware.authenticateLogin, csrfProtection, universityController.postRevokeCertificate);
 router.get('/certificate/download/:certId', universityMiddleware.authenticateLogin, universityController.downloadCertificatePDF);
