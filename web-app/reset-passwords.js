@@ -14,7 +14,7 @@ async function resetPasswords() {
 
         const newPassword = '1234';
 
-        // Update Students
+        
         console.log('Updating students...');
         const studentList = await students.find({});
         for (const student of studentList) {
@@ -23,7 +23,7 @@ async function resetPasswords() {
         }
         console.log(`Updated ${studentList.length} students.`);
 
-        // Update Universities
+        
         console.log('Updating universities...');
         const universityList = await universities.find({});
         for (const university of universityList) {
