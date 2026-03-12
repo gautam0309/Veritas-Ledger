@@ -2,11 +2,7 @@ const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 const path = require('path');
 
-/**
- * Generate a styled PDF certificate and return it as a buffer
- * @param {Object} certData - Certificate data
- * @returns {Promise<Buffer>} PDF buffer
- */
+
 async function generateCertificatePDF(certData) {
     return new Promise(async (resolve, reject) => {
         try {
