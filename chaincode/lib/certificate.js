@@ -4,8 +4,8 @@
 class Certificate {
     
 
-    
-    
+    //todo: universityPK and studentPK should ideally be public keys. If you can't accomplish this, look into using 
+    // some kind of UUID instead. 
     constructor(certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK, issuerEmail = "") {
         this.certHash = certHash;
         this.universityPK = universityPK;
@@ -34,7 +34,7 @@ class Certificate {
     }
 
 
-    
+    //todo: Add validation of some kind to see that the signatures match and stuff. (LATER)
 }
 
 module.exports = Certificate;
