@@ -1,12 +1,7 @@
 const moment = require('moment');
 
 
-/**
- * Merge certificate data from Database and Blockchain Ledger
- * @param {certificates[]} dbRecordArray
- * @param ledgerRecordArray
- * @returns {certificates[]}
- */
+
 function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
     let certMergedDataArray = [];
 
@@ -16,7 +11,7 @@ function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
             return element.certUUID === dbEntry._id.toString();
         });
 
-        if (!chaincodeEntry) continue; // skip if no matching ledger entry
+        if (!chaincodeEntry) continue; 
 
         let isExpired = false;
         if (dbEntry.expiryDate) {
@@ -35,7 +30,7 @@ function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
             rollNumber: dbEntry.rollNumber || 'N/A',
             certUUID: dbEntry._id.toString(),
             hash: chaincodeEntry.certHash,
-            // New fields
+            
             revoked: dbEntry.revoked || false,
             revokedReason: dbEntry.revokedReason || '',
             revokedAt: dbEntry.revokedAt ? moment(dbEntry.revokedAt).format('YYYY-MM-DD') : null,
