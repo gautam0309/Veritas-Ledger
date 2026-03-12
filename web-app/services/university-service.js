@@ -6,12 +6,7 @@ const logger = require("./logger");
 const encryption = require('./encryption');
 const certificateService = require('./certificate-service');
 
-/**
- * Create certificate object in database and ledger.
- * For ledger - data needs to be cryptographically signed by student and university private key.
- * @param {certificates.schema} certData
- * @returns {Promise<{}>}
- */
+
 async function issueCertificate(certData) {
 
     let universityObj = await universities.findOne({ "email": certData.universityEmail });
@@ -46,12 +41,7 @@ async function issueCertificate(certData) {
     return { success: true, certId: certDBModel._id.toString() };
 }
 
-/**
- * Fetch and return all certificates issued by a specific university
- * @param {String} universityName
- * @param {String} universtiyEmail
- * @returns {Promise<certificates[]>}
- */
+
 async function getCertificateDataforDashboard(universityName, universtiyEmail) {
     let universityProfile = await chaincode.invokeChaincode("queryUniversityProfileByName",
         [universityName], true, universtiyEmail);
@@ -69,109 +59,103 @@ async function getCertificateDataforDashboard(universityName, universtiyEmail) {
 }
 
 
-/**
- * Revoke a certificate on-chain
- * @param {String} certUUID
- * @param {String} reason
- * @param {String} universityEmail
- * @returns {Promise<void>}
- */
+
 async function revokeCertificateOnChain(certUUID, reason, universityEmail) {
     logger.info(`Revoking certificate ${certUUID} on-chain for ${universityEmail}`);
     await chaincode.invokeChaincode("revokeCertificate", [certUUID, reason], false, universityEmail);
 }
 
 module.exports = { issueCertificate, getCertificateDataforDashboard, revokeCertificateOnChain };
-/* minor update: 2026-02-21 13:51:02 */
 
-/* minor update: 2026-02-21 18:42:53 */
 
-/* minor update: 2026-02-22 13:30:10 */
 
-/* minor update: 2026-02-22 18:37:05 */
 
-/* minor update: 2026-02-23 16:54:17 */
 
-/* minor update: 2026-02-23 16:58:40 */
 
-/* minor update: 2026-02-23 17:07:07 */
 
-/* minor update: 2026-02-23 09:58:21 */
 
-/* minor update: 2026-02-23 09:54:12 */
 
-/* minor update: 2026-02-23 13:26:16 */
 
-/* minor update: 2026-02-23 09:59:14 */
 
-/* minor update: 2026-02-25 13:34:20 */
 
-/* minor update: 2026-02-25 13:54:41 */
 
-/* minor update: 2026-02-25 18:01:37 */
 
-/* minor update: 2026-02-25 12:00:09 */
 
-/* minor update: 2026-02-25 15:44:46 */
 
-/* minor update: 2026-02-26 10:09:56 */
 
-/* minor update: 2026-02-27 15:29:27 */
 
-/* minor update: 2026-03-01 17:08:39 */
 
-/* minor update: 2026-03-01 14:49:35 */
 
-/* minor update: 2026-03-01 13:29:23 */
 
-/* minor update: 2026-03-01 14:20:28 */
 
-/* minor update: 2026-03-01 09:53:42 */
 
-/* minor update: 2026-03-01 17:09:07 */
 
-/* minor update: 2026-03-01 09:31:20 */
 
-/* minor update: 2026-03-01 16:53:58 */
 
-/* minor update: 2026-03-02 17:05:54 */
 
-/* minor update: 2026-03-02 11:49:47 */
 
-/* minor update: 2026-03-02 18:59:14 */
 
-/* minor update: 2026-03-02 18:07:50 */
 
-/* minor update: 2026-03-02 10:30:09 */
 
-/* minor update: 2026-03-03 10:32:33 */
 
-/* minor update: 2026-03-03 14:07:34 */
 
-/* minor update: 2026-03-04 18:01:01 */
 
-/* minor update: 2026-03-04 14:52:57 */
 
-/* minor update: 2026-03-04 09:46:17 */
 
-/* minor update: 2026-03-04 12:53:31 */
 
-/* minor update: 2026-03-04 17:15:01 */
 
-/* minor update: 2026-03-04 14:45:28 */
 
-/* minor update: 2026-03-05 12:52:48 */
 
-/* minor update: 2026-03-05 16:07:46 */
 
-/* minor update: 2026-03-05 13:24:22 */
 
-/* minor update: 2026-03-05 11:26:24 */
 
-/* minor update: 2026-03-06 11:54:13 */
 
-/* minor update: 2026-03-06 13:02:14 */
 
-/* minor update: 2026-03-06 09:39:19 */
 
-/* minor update: 2026-03-06 14:21:36 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
