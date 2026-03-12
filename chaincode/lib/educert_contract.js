@@ -1,6 +1,6 @@
 'use strict';
 
-// Fabric smart contract class
+
 const { Contract } = require('fabric-contract-api');
 const Certificate = require('./certificate');
 const UniversityProfile = require('./university_profile');
@@ -10,11 +10,7 @@ const jsrs = require('jsrsasign');
 
 class EducertContract extends Contract {
 
-    /**
-     * Initialize the ledger. 
-     * Certificate schema is written to database during initialization. Schema is necessary for encryption. 
-     * @param {Context} ctx the transaction context.
-     */
+    
     async initLedger(ctx) {
         console.log("-------------------------initLedger Called---------------------------------------")
 
@@ -25,40 +21,30 @@ class EducertContract extends Contract {
         return schemaCertificate;
     }
 
-    /**
-     * Issue a new certificate to the ledger. 
-     * @param {Context} ctx The transaction context
-     * @param {String} certHash - Hash created from the certificate data. 
-     * @param {String} universitySignature - Signature of @certHash signed by private key of issuer(university)
-     * @param {String} studentSignature - Signature of @certHash signed by private key of holder(student)
-     * @param {String} dateOfIssuing - Date the certificate was issued
-     * @param {String} certUUID - UUID for a certificate (automatically generated. Must match with database entry)
-     * @param {String} universityPK - Public key or public ID of issuer account
-     * @param {String} studentPK - Public key or public ID of student account 
-     */
+    
     async issueCertificate(ctx, certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK) {
         console.log("============= START : Issue Certificate ===========");
 
-        // 1. Access Control: Only identities from Org1 (University Org) can issue
+        
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error(`Unauthorized: Organization ${mspId} is not allowed to issue certificates.`);
         }
 
-        // 2. ABAC: Get issuer email from identity attributes
+        
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         if (!userEmail) {
             throw new Error('Unauthorized: Client identity is missing the required email attribute.');
         }
 
-        // Check if certificate already exists to prevent overwrite
+        
         const exists = await ctx.stub.getState("CERT" + certUUID);
         if (exists && exists.length > 0) {
             throw new Error(`Certificate with UUID ${certUUID} already exists on the ledger.`);
         }
 
-        // 2.1 ABAC Verification: Ensure the caller's registered public key matches the provided universityPK
-        // This prevents Category 2/9 Cross-University Issuance (using someone else's PK)
+        
+        
         const uniProfileAsBytes = await ctx.stub.getState("UNI_EMAIL_" + userEmail);
         if (!uniProfileAsBytes || uniProfileAsBytes.length === 0) {
             throw new Error(`Unauthorized: University profile for ${userEmail} not found. Please register first.`);
@@ -68,7 +54,7 @@ class EducertContract extends Contract {
             throw new Error(`Unauthorized: Provided Public Key does not match the registered key for ${userEmail}.`);
         }
 
-        // 3. Signature Verification: Verify that the university actually signed this hash
+        
         const isUniSigValid = this._verifySignature(universityPK, certHash, universitySignature);
         if (!isUniSigValid) {
             throw new Error('Invalid University Signature: The certificate hash does not match the provided signature.');
@@ -86,16 +72,11 @@ class EducertContract extends Contract {
         return certificate;
     }
 
-    /**
-     * Revoke a certificate on the ledger.
-     * @param {Context} ctx The transaction context
-     * @param {String} certUUID - UUID of the certificate to revoke
-     * @param {String} reason - Reason for revocation
-     */
+    
     async revokeCertificate(ctx, certUUID, reason) {
         console.log("============= START : Revoke Certificate ===========");
 
-        // 1. Access Control: Only identities from Org1 (University Org) can revoke
+        
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error(`Unauthorized: Organization ${mspId} is not allowed to revoke certificates.`);
@@ -108,12 +89,12 @@ class EducertContract extends Contract {
 
         const certificate = Certificate.deserialize(JSON.parse(certAsBytes.toString()));
 
-        // 2. ABAC: Only the issuing university can revoke its own certificate
+        
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         console.log(`[REVOKE_DEBUG_V10] Revoking Cert ${certUUID}. User: ${userEmail}`);
 
-        // Strict check: fails ONLY if certificate has issuerEmail (New Certs) AND it doesn't match
-        // We also check 'normalized' versions (removing dots) to handle potential formatting mismatches (e.g. gmail dots)
+        
+        
         if (certificate.issuerEmail) {
             console.log(`[REVOKE_DEBUG_V10] Cert Issuer: ${certificate.issuerEmail}`);
             const cleanIssuer = certificate.issuerEmail.replace(/\./g, '');
@@ -131,7 +112,7 @@ class EducertContract extends Contract {
         certificate.revoked = true;
         certificate.revokedReason = reason;
 
-        // Ensure timestamp conversion is safe for BigInt/Long objects
+        
         const txTimestamp = ctx.stub.getTxTimestamp();
         let tsSeconds = txTimestamp.seconds.low !== undefined ? txTimestamp.seconds.low : txTimestamp.seconds;
         if (typeof tsSeconds !== 'number') tsSeconds = Number(tsSeconds);
@@ -144,18 +125,16 @@ class EducertContract extends Contract {
         return certificate;
     }
 
-    /**
-     * Internal helper to verify ECDSA signatures
-     */
+    
     _verifySignature(publicKey, data, signature) {
         try {
             let sig = new jsrs.KJUR.crypto.Signature({ "alg": "SHA256withECDSA" });
 
-            // Check if publicKey is PEM or Hex
+            
             if (publicKey.includes('-----BEGIN PUBLIC KEY-----')) {
                 sig.init(publicKey);
             } else {
-                // Assume PK is hex if not PEM
+                
                 sig.init({ "xy": publicKey, "curve": "secp256r1" });
             }
 
@@ -168,18 +147,11 @@ class EducertContract extends Contract {
     }
 
 
-    /**
-    * Register a university. Must be done when a university enrolls into the platform.
-    * @param {Context} ctx The transaction context
-    * @param {String} name 
-    * @param {String} publicKey 
-    * @param {String} location 
-    * @param {String} description 
-    */
+    
     async registerUniversity(ctx, name, publicKey, location, description) {
         console.log("============= START : Register University ===========");
 
-        // Access Control: Only Admin or certain roles should register universities
+        
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error('Unauthorized: Only Org1MSP admin can register new universities.');
@@ -190,13 +162,13 @@ class EducertContract extends Contract {
             throw new Error('Unauthorized: Client identity is missing the required email attribute.');
         }
 
-        // Check if university already exists
+        
         const exists = await ctx.stub.getState("UNI" + name);
         if (exists && exists.length > 0) {
             throw new Error(`University ${name} is already registered on the ledger.`);
         }
 
-        // 3. Category 3 Fix: Prevent Public Key Collision
+        
         const pkExists = await ctx.stub.getState("PK_" + publicKey);
         if (pkExists && pkExists.length > 0) {
             throw new Error(`Public Key ${publicKey} is already registered by another university.`);
@@ -205,7 +177,7 @@ class EducertContract extends Contract {
         const university = new UniversityProfile(name, publicKey, location, description, userEmail);
         await ctx.stub.putState("UNI" + name, Buffer.from(JSON.stringify(university)));
 
-        // Store indexes for email and PK lookup (Category 2/9 optimization)
+        
         await ctx.stub.putState("UNI_EMAIL_" + userEmail, Buffer.from(JSON.stringify(university)));
         await ctx.stub.putState("PK_" + publicKey, Buffer.from(name));
 
@@ -213,12 +185,7 @@ class EducertContract extends Contract {
         return university;
     }
 
-    /**
-     * Get public profile of a enrolled university based on it's name
-     * @param {Context} ctx The transaction context
-     * @param {String} name 
-     * @returns {JSON} University Profile
-     */
+    
     async queryUniversityProfileByName(ctx, name) {
         const profileAsBytes = await ctx.stub.getState("UNI" + name);
 
@@ -231,11 +198,7 @@ class EducertContract extends Contract {
         return JSON.parse(profileAsBytes.toString());
     }
 
-    /**
-     * Get the certificate schema and ordering. 
-     * @param {Context} ctx The transaction context
-     * @param {String} schemaVersion Schema version number. Eg - "v1", "v2" etc
-     */
+    
     async queryCertificateSchema(ctx, schemaVersion) {
         let schemaAsBytes = await ctx.stub.getState("schema_" + schemaVersion);
 
@@ -253,12 +216,7 @@ class EducertContract extends Contract {
         return JSON.parse(schemaAsBytes.toString());
     }
 
-    /**
-     * Get a certificate based on its UUID
-     * @param {Context} ctx The transaction context
-     * @param {String} UUID Certificate unique ID
-     * @returns {JSON} Certificate data
-     */
+    
     async queryCertificateByUUID(ctx, UUID) {
         const certificateAsBytes = await ctx.stub.getState("CERT" + UUID);
 
@@ -271,12 +229,7 @@ class EducertContract extends Contract {
         return JSON.parse(certificateAsBytes.toString());
     }
 
-    /**
-     * Returns all the certificates received by a specific student
-     * @param {Context} ctx The transaction context
-     * @param {*} studentPK Public Key of students account in platform
-     * @returns {[Certificate]} 
-     */
+    
     async getAllCertificateByStudent(ctx, studentPK) {
         let queryString = {
             selector: {
@@ -306,7 +259,7 @@ class EducertContract extends Contract {
                     let jsonRes = JSON.parse(res.value.value.toString('utf8'));
                     let cert = Certificate.deserialize(jsonRes);
 
-                    // ABAC Check: inherently filtered by studentPK in selector
+                    
                     certArray.push(cert);
                 } catch (err) {
                     console.log("Failed to instantiate Certificate object from JSON\n" + err);
@@ -330,12 +283,7 @@ class EducertContract extends Contract {
         return certArray;
     }
 
-    /**
-     * Returns al the certificates issued by a specific university
-     * @param {Context} ctx The transaction context
-     * @param {*} universityPK Public Key of university that issued the certificate
-     * @returns {[Certificate]} 
-     */
+    
     async getAllCertificateByUniversity(ctx, universityPK) {
         let queryString = {
             selector: {
@@ -349,9 +297,9 @@ class EducertContract extends Contract {
 
         if (callerEmail) {
             let universityAsBytes = await ctx.stub.getState("UNI" + callerEmail);
-            // In the original getAllCertificateByStudent, it checked `callerEmail`, but standard is `UNI` + name for state keys.
-            // Let's implement the core ABAC check based on the caller email matching the university's email
-            // But we actually only have universityPK as the input.
+            
+            
+            
         }
 
         let certArray = [];
@@ -361,18 +309,18 @@ class EducertContract extends Contract {
             try {
                 let cert = Certificate.deserialize(results[i].value);
 
-                // ABAC Check: Only admin or the issuing university can view this history
+                
                 if (callerEmail === 'admin' ||
                     (callerEmail && cert.issuerEmail && callerEmail.replace(/\./g, '') === cert.issuerEmail.replace(/\./g, ''))) {
                     certArray.push(cert);
                 } else if (!cert.issuerEmail && callerEmail === 'admin') {
-                    // Legacy certificates without issuerEmail: only admins can view them in bulk
+                    
                     certArray.push(cert);
                 }
             } catch (err) {
                 console.log("Failed to instantiate Certificate object from JSON in getAllCertificateByUniversity\n" + err);
                 console.log("DATA TYPE:  " + typeof results[i])
-                // Only push raw if authorized as admin
+                
                 if (callerEmail === 'admin') {
                     certArray.push(results[i]);
                 }
@@ -384,14 +332,9 @@ class EducertContract extends Contract {
 
 
 
-    /**
-     * Query and return all key value pairs in the world state.
-     *
-     * @param {Context} ctx the transaction context
-     * @returns - all key-value pairs in the world state
-    */
+    
     async queryAll(ctx) {
-        // Category 9 Fix: Restrict queryAll to admins only
+        
         const mspId = ctx.clientIdentity.getMSPID();
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         if (mspId !== 'Org1MSP' || userEmail !== 'admin') {
@@ -406,15 +349,7 @@ class EducertContract extends Contract {
         return queryResults;
     }
 
-    /**
-       * Evaluate a queryString and return all key-value pairs that match that query. 
-       * Only possible if CouchDB is used as state database. 
-       * @param {Context} ctx the transaction context
-       * @param {String} queryString the query string to be evaluated
-       * @param {Number} pageSize maximum number of results to return
-       * @param {String} bookmark bookmark for the next page
-       * @returns {Object} {results: [JSON], bookmark: String, count: Number}
-      */
+    
     async queryWithQueryStringPaginated(ctx, queryString, pageSize, bookmark) {
 
         console.log("============= START : queryWithQueryStringPaginated ===========");
@@ -450,13 +385,7 @@ class EducertContract extends Contract {
         }
     }
 
-    /**
-       * Evaluate a queryString and return all key-value pairs that match that query. 
-       * (Non-paginated - use for small internal lookups)
-       * @param {Context} ctx the transaction context
-       * @param {String} queryString the query string to be evaluated
-       * @returns {[JSON]} - Two objects, key and value. 
-      */
+    
     async queryWithQueryString(ctx, queryString) {
         let resultsIterator = await ctx.stub.getQueryResult(queryString);
         let allResults = [];
@@ -484,86 +413,86 @@ class EducertContract extends Contract {
 
 
 module.exports = EducertContract;
-/* minor update: 2026-02-21 18:04:42 */
 
-/* minor update: 2026-02-21 13:19:59 */
 
-/* minor update: 2026-02-21 13:37:48 */
 
-/* minor update: 2026-02-22 12:27:22 */
 
-/* minor update: 2026-02-22 18:08:10 */
 
-/* minor update: 2026-02-23 17:30:35 */
 
-/* minor update: 2026-02-23 09:32:03 */
 
-/* minor update: 2026-02-23 09:15:40 */
 
-/* minor update: 2026-02-23 16:56:59 */
 
-/* minor update: 2026-02-23 15:05:48 */
 
-/* minor update: 2026-02-24 17:15:31 */
 
-/* minor update: 2026-02-25 13:17:50 */
 
-/* minor update: 2026-02-25 16:58:45 */
 
-/* minor update: 2026-02-25 09:42:11 */
 
-/* minor update: 2026-02-25 18:33:50 */
 
-/* minor update: 2026-02-27 13:02:39 */
 
-/* minor update: 2026-03-01 17:46:47 */
 
-/* minor update: 2026-03-01 09:26:23 */
 
-/* minor update: 2026-03-01 15:26:21 */
 
-/* minor update: 2026-03-01 18:14:25 */
 
-/* minor update: 2026-03-01 17:38:21 */
 
-/* minor update: 2026-03-02 10:22:45 */
 
-/* minor update: 2026-03-02 10:48:57 */
 
-/* minor update: 2026-03-03 18:39:20 */
 
-/* minor update: 2026-03-03 17:26:25 */
 
-/* minor update: 2026-03-03 11:58:30 */
 
-/* minor update: 2026-03-03 16:47:39 */
 
-/* minor update: 2026-03-03 18:27:56 */
 
-/* minor update: 2026-03-04 15:34:46 */
 
-/* minor update: 2026-03-04 14:09:19 */
 
-/* minor update: 2026-03-04 15:19:42 */
 
-/* minor update: 2026-03-04 12:45:25 */
 
-/* minor update: 2026-03-04 09:01:14 */
 
-/* minor update: 2026-03-04 15:58:26 */
 
-/* minor update: 2026-03-05 16:22:29 */
 
-/* minor update: 2026-03-05 15:40:12 */
 
-/* minor update: 2026-03-05 10:36:55 */
 
-/* minor update: 2026-03-05 09:16:17 */
 
-/* minor update: 2026-03-05 11:32:08 */
 
-/* minor update: 2026-03-05 13:53:17 */
 
-/* minor update: 2026-03-05 12:42:23 */
 
-/* minor update: 2026-03-06 18:45:35 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
