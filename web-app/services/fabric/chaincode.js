@@ -1,4 +1,4 @@
-
+//Import Hyperledger Fabric 1.4 programming model - fabric-network
 'use strict';
 
 const { Gateway, Wallets } = require('fabric-network');
@@ -95,7 +95,7 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
         }
 
     } catch (error) {
-        
+        // Category 2 Fix: Handle MVCC_READ_CONFLICT (Error 10/14) and retry
         const isMvccConflict = error.message && (error.message.includes('MVCC_READ_CONFLICT') || error.message.includes('Phantom read conflict'));
 
         if (isMvccConflict && retryCount < MAX_RETRIES) {
