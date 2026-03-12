@@ -2,8 +2,8 @@ let mongoose = require('mongoose');
 const logger = require('../services/logger');
 const config = require('../loaders/config');
 
-
-
+//loader class for mongoDB.
+//initializes mongodb and exports connection.
 
 
 mongoose.Promise = global.Promise;
