@@ -25,13 +25,13 @@ async function generateMerkleTree(certData) {
 
     let certDataArray = [];
 
-    
-    
+    //certSchema used to order the certificate elements appropriately.
+    //ordering[i] = key of i'th item that should go in the certificate array.
     for (let i = 0; i < certSchema.ordering.length; i++) {
         let itemKey = certSchema.ordering[i];
         let value = certData[itemKey];
 
-        
+        // Ensure certUUID is correctly mapped even if coming from Mongoose _id
         if (itemKey === 'certUUID' && !value) {
             value = certData._id ? certData._id.toString() : (certData.certUUID || '');
         }
@@ -65,10 +65,10 @@ async function createDigitalSignature(stringToSign, signerEmail) {
         throw new Error(`Identity for ${signerEmail} not found in wallet`);
     }
 
-    
+    // Extract private key from X.509 identity
     const privateKeyPEM = identity.credentials.privateKey;
 
-    
+    // Use jsrsasign to read the PEM and sign
     let sig = new jsrs.KJUR.crypto.Signature({ "alg": "SHA256withECDSA" });
     sig.init(privateKeyPEM);
     sig.updateHex(stringToSign);
@@ -98,12 +98,12 @@ async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
 
     let mTree = await generateMerkleTree(certificateDBData);
 
-    
+    //get the index or "ordering" of the data to share in the pre defined schema.
     let paramsToShareIndex = getParamsIndexArray(paramsToShare, certSchema.ordering);
 
-    
-    
-    
+    // Sort ascending, otherwise getMultiProof might throw or return corrupted proofs
+    // merkletreejs getMultiProof expects indices to be sorted strictly in ascending order.
+    // We must sort the paramsToShareIndex here because they might be requested out of order.
     let sortedIndices = [...paramsToShareIndex].sort((a, b) => a - b);
 
     let multiProof = mTree.getMultiProof(mTree.getHexLayersFlat(), sortedIndices);
@@ -119,7 +119,7 @@ async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
     let certificateDBData = await certificates.findOne({ "_id": certUUID });
     let mTree = await generateMerkleTree(certificateDBData);
 
-    
+    //Split disclosedData object into two separate key and value arrays.
     let disclosedDataParamNames = [];
     let disclosedDataValues = [];
 
@@ -132,7 +132,7 @@ async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
 
     let mTreeRoot = mTree.getRoot();
 
-    
+    // The hashed pairs must be formatted exactly as expected by merkletreejs
     let hashIndexPairs = paramsToShareIndex.map((index, i) => {
         let hashWordArr = SHA256(disclosedDataValues[i].toString());
         return {
@@ -141,8 +141,8 @@ async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
         };
     });
 
-    
-    
+    // Sort the hashIndexPairs by index to ensure sortedIndices and sortedHashes are in ascending order of index
+    // This is required by merkletreejs.verifyMultiProof
     hashIndexPairs.sort((a, b) => a.index - b.index);
 
     let sortedIndices = hashIndexPairs.map(p => p.index);
