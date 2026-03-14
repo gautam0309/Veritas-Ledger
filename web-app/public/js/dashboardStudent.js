@@ -1,9 +1,9 @@
 $('#shareDataModal').on('show.bs.modal', function (event) {
-    var button = $(event.relatedTarget); // Button that triggered the modal
-    var certID = button.data('certid'); // Extract info from data-* attributes
+    var button = $(event.relatedTarget); 
+    var certID = button.data('certid'); 
 
     var modal = $(this);
-    // Store certID in data attribute for later use
+    
     modal.data('certid', certID);
 });
 
@@ -25,7 +25,7 @@ $("#modalCreateProof").on('click', function (event) {
             let successModal = $('#shareSuccessModal');
             let modalBody = successModal.find("#shareSuccessModalBody");
 
-            // Build content with QR code and proof JSON
+            
             let content = '';
 
             if (result.qrCode) {
