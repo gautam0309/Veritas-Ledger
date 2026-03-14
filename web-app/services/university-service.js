@@ -30,11 +30,11 @@ async function issueCertificate(certData) {
         let res = await certDBModel.save();
         if (!res) throw new Error("Database returned empty result on save");
     } catch (dbError) {
-        // Category 5 Fix: Critical Sync Gap Handling
-        // The ledger transaction succeeded (invokeChaincode didn't throw), but DB save failed.
+        
+        
         logger.error(`CRITICAL SYNC GAP [Category 5]: Certificate ${certDBModel._id} COMMITTED TO LEDGER but FAILED TO SAVE TO DATABASE: ${dbError.message}`);
-        // In a real production system, this would trigger an alert/queue for reconciliation.
-        // For now, we return a partial success but throw so the controller knows about the DB error.
+        
+        
         throw new Error(`On-Chain Issuance SUCCESSFUL, but Local Database Sync FAILED. UUID: ${certDBModel._id}. Please contact admin for reconciliation.`);
     }
 
