@@ -26,9 +26,7 @@ function initializeTransporter() {
 // Initialize on first require
 initializeTransporter();
 
-/**
- * Simple HTML escape function to prevent injection
- */
+
 function escapeHTML(str) {
     if (!str) return "";
     return String(str)
@@ -39,12 +37,7 @@ function escapeHTML(str) {
         .replace(/'/g, "&#039;");
 }
 
-/**
- * Send an email notification
- * @param {string} to - Recipient email
- * @param {string} subject - Email subject
- * @param {string} html - HTML body content
- */
+
 async function sendEmail(to, subject, html) {
     try {
         if (transporter) {
@@ -63,9 +56,7 @@ async function sendEmail(to, subject, html) {
     }
 }
 
-/**
- * Send certificate issued notification to student
- */
+
 async function notifyCertificateIssued(studentEmail, studentName, universityName, major) {
     const subject = `New Certificate Issued - ${universityName}`;
     const eStudentName = escapeHTML(studentName);
@@ -87,9 +78,7 @@ async function notifyCertificateIssued(studentEmail, studentName, universityName
     await sendEmail(studentEmail, subject, html);
 }
 
-/**
- * Send certificate revocation notification
- */
+
 async function notifyCertificateRevoked(studentEmail, studentName, universityName, reason) {
     const subject = `Certificate Revoked - ${universityName}`;
     const eStudentName = escapeHTML(studentName);
@@ -110,9 +99,7 @@ async function notifyCertificateRevoked(studentEmail, studentName, universityNam
     await sendEmail(studentEmail, subject, html);
 }
 
-/**
- * Send registration confirmation
- */
+
 async function notifyRegistration(email, name, role) {
     const subject = `Welcome to Veritas Ledger - Registration Successful`;
     const eName = escapeHTML(name);
@@ -131,9 +118,7 @@ async function notifyRegistration(email, name, role) {
     await sendEmail(email, subject, html);
 }
 
-/**
- * Send transcript request notification
- */
+
 async function notifyTranscriptRequest(universityEmail, studentName, certUUID, note) {
     const subject = `Transcript Request - ${studentName}`;
     const eStudentName = escapeHTML(studentName);
