@@ -1,9 +1,9 @@
 const nodemailer = require('nodemailer');
 const logger = require('./logger');
 
-// Email transporter configuration
-// Uses environment variables for SMTP settings
-// If not configured, emails will be logged but not sent
+
+
+
 let transporter = null;
 
 function initializeTransporter() {
@@ -23,7 +23,7 @@ function initializeTransporter() {
     }
 }
 
-// Initialize on first require
+
 initializeTransporter();
 
 
