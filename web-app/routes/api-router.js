@@ -9,6 +9,6 @@ router.post('/verify', apiController.postVerifyCert);
 
 
 
-
+// error handler
 router.use(apiController.apiErrorHandler);
 module.exports = router;
