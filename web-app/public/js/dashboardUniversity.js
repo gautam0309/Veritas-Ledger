@@ -20,10 +20,10 @@ $(document).ready(function () {
         });
     }
 
-    
+    // Initial fetch
     fetchAnalytics('6m');
 
-    
+    // Time range listener
     $('#timeRange').on('change', function () {
         const val = $(this).val();
         const text = $(this).find('option:selected').text();
@@ -38,7 +38,7 @@ $(document).ready(function () {
         }
     });
 
-    
+    // Custom Date Apply Listener
     $('#applyCustomDate').on('click', function () {
         const start = $('#startDate').val();
         const end = $('#endDate').val();
@@ -57,7 +57,7 @@ $(document).ready(function () {
     });
 
     function renderCharts(data) {
-        
+        // 1. Issuance Chart (Line Chart)
         const ctxIssuance = document.getElementById('issuanceChart').getContext('2d');
         const labelsIssuance = data.timeStats.map(item => item._id);
         const countsIssuance = data.timeStats.map(item => item.count);
@@ -99,7 +99,7 @@ $(document).ready(function () {
             }
         });
 
-        
+        // 2. Department Distribution (Doughnut Chart)
         const ctxDept = document.getElementById('deptChart').getContext('2d');
         const labelsDept = data.deptStats.map(item => item._id);
         const countsDept = data.deptStats.map(item => item.count);
@@ -124,41 +124,41 @@ $(document).ready(function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '40%', 
+                cutout: '40%', // Thicker ring / bigger appearance
                 plugins: {
                     legend: {
                         position: 'right',
                         align: 'center',
                         labels: {
                             color: '#64748b',
-                            boxWidth: 12, 
-                            padding: 10,  
+                            boxWidth: 12, // Smaller box to save space
+                            padding: 10,  // Reduced padding
                             font: {
-                                size: 11 
+                                size: 11 // Slightly smaller font to fit more text
                             }
                         }
                     }
                 },
                 layout: {
-                    padding: 5 
+                    padding: 5 // Minimal padding to maximize chart size
                 }
             }
         });
     }
-    
-    
+    // Hash Toggle Listener
+    // Hash Toggle Listener (Modal Version)
     $(document).on('click', '.toggle-hash', function () {
         const btn = $(this);
         const fullHash = btn.data('full-hash');
 
-        
+        // Set hash text in modal
         $('#modalHashText').text(fullHash);
 
-        
+        // Show modal
         $('#hashModal').modal('show');
     });
 
-    
+    // Initialize feather icons for dynamic content
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
