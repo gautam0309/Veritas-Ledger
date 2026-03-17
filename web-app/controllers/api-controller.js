@@ -13,7 +13,7 @@ async function getGenerateProof(req, res, next) {
             throw Error("Choose atleast one attribute to share")
         }
 
-        // Whitelist allowed attributes to prevent leaking internal fields
+        
         const allowedAttributes = ["studentName", "universityName", "major", "departmentName", "cgpa", "dateOfIssuing", "expiryDate"];
         const filteredAttributes = req.query.sharedAttributes.filter(attr => allowedAttributes.includes(attr));
 
@@ -21,7 +21,7 @@ async function getGenerateProof(req, res, next) {
             throw Error("No valid attributes selected for sharing");
         }
 
-        // Ownership check: Ensure the certificate belongs to the logged-in student
+        
         const certUUID = String(req.query.certUUID);
         const cert = await certificates.findOne({ "_id": certUUID });
         if (!cert || cert.studentEmail !== req.session.email) {
@@ -37,11 +37,11 @@ async function getGenerateProof(req, res, next) {
             certUUID: certUUID
         };
 
-        // Generate QR code as base64 data URL
+        
         let proofJSON = JSON.stringify(proofObject);
         let proofBase64 = Buffer.from(proofJSON).toString('base64');
 
-        // Build verification URL (relative — works on any host)
+        
         let verifyURL = `/verify?proof=${proofBase64}`;
 
         let qrCodeDataURL = null;
@@ -53,8 +53,8 @@ async function getGenerateProof(req, res, next) {
             });
         } catch (qrErr) {
             logger.error("QR code generation failed: " + qrErr.message);
-            // If URL is too long for QR, generate a simpler one
-            // Fall back to just the certificate UUID
+            
+            
             let simplifiedURL = `/verify?certUUID=${certUUID}`;
             qrCodeDataURL = await QRCode.toDataURL(simplifiedURL, {
                 width: 300,
@@ -132,13 +132,13 @@ async function postVerifyCert(req, res, next) {
 async function apiErrorHandler(err, req, res, next) {
     const isDev = req.app.get('env') === 'development';
 
-    // set locals, only providing error in development
+    
     res.locals.message = err.message;
     res.locals.error = isDev ? err : {};
 
     const errorResponse = isDev ? err.message : "An unexpected error occurred. Please contact support.";
 
-    // render the error page
+    
     return res.status(err.status || 500).json({
         success: false,
         error: errorResponse
