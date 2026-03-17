@@ -14,7 +14,7 @@ async function debugUser(email) {
             console.log('Found in STUDENTS collection');
             console.log('Name:', student.name);
             console.log('Has password hash:', !!student.password);
-            
+            // Don't log the hash for privacy, but we can verify it against '1234'
             const bcrypt = require('bcryptjs');
             const match = await bcrypt.compare('1234', student.password);
             console.log('Password matches "1234":', match);
