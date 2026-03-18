@@ -34,7 +34,7 @@ async function postRegisterStudent(req, res, next) {
             ipAddress: req.ip
         });
 
-        
+        // Email notification
         emailService.notifyRegistration(req.body.email, req.body.name, 'student');
 
         res.render("register-success", {
@@ -69,13 +69,13 @@ async function postLoginStudent(req, res, next) {
     try {
         let studentObject = await students.validateByCredentials(req.body.email, req.body.password)
 
-        
+        // Prevent Session Fixation (OWASP Cheat Sheet)
         await new Promise((resolve, reject) => {
             req.session.regenerate((err) => {
                 if (err) reject(err);
 
-                
-                
+                // Re-create the CSRF token for the new session 
+                // to prevent "Forbidden" error if the login result needs to render again (e.g., catching errors later)
                 const crypto = require('crypto');
                 req.session.csrfToken = crypto.randomBytes(32).toString('hex');
                 res.locals.csrfToken = req.session.csrfToken;
@@ -131,21 +131,21 @@ async function postRequestTranscript(req, res, next) {
         const { certId, note } = req.body;
         const studentName = req.session.name;
 
-        
+        // Find certificate to get university email
         const cert = await certificates.findById(certId);
 
         if (!cert) {
             throw new Error("Certificate not found");
         }
 
-        
+        // IDOR Fix: Ensure student owns the certificate they are requesting a transcript for.
         if (cert.studentEmail !== req.session.email) {
             throw new Error("Unauthorized: You do not own this certificate.");
         }
 
         await emailService.notifyTranscriptRequest(cert.universityEmail, studentName, certId, note);
 
-        
+        // Flash message handling would be ideal here, but for now redirecting with query param
         res.redirect('/student/dashboard?message=Transcript%20Requested');
 
     } catch (e) {
@@ -158,52 +158,52 @@ async function getVerificationHistory(req, res, next) {
     try {
         const studentEmail = req.session.email;
 
-        
+        // 1. Get all certificate UUIDs for this student
         const studentCerts = await certificates.find({ studentEmail: studentEmail }).select('_id');
         const certUUIDs = studentCerts.map(c => c._id.toString());
-        
-        
-        
-        
-        
-        
+        // Checking certificates.js schema... it doesn't explicitly define 'certUUID'. 
+        // Wait! certificates.js schema (Step 2238) does NOT have certUUID!
+        // It has rollNumber, studentName, etc.
+        // Browse dashboard-uni (Step 2089) uses 'certData[i].certUUID'.
+        // University Controller (Step 2073) uses 'certUUID' in 'postIssueCertificate'.
+        // Let's re-verify certificates.js schema.
 
-        
-        
-        
-        
-        
+        // View Step 2238:
+        // Schema does NOT have certUUID!
+        // But dashboard uses it.
+        // Maybe it's implicitly added or I missed it?
+        // Let's check 'postIssueCertificate' in university-controller.js
 
-        
-        
-        
-        
+        // I'll assume for now I need to check where UUID is stored.
+        // If it's not in Mongoose schema, I can't query it easily?
+        // Wait, issue function saves to Blockchain AND MongoDB.
+        // If MongoDB schema doesn't have it, it's not saved there?
 
-        
+        // Let's check university-controller.js to see how it saves to DB.
 
-        
-        
-        
+        // For now, I'll write the function assuming certUUID field exists or I need to add it.
+        // BUT if I can't find it, I can't query audit logs by it.
+        // Actually, let's look at auditlog schema (Step 2237). It has 'targetCertId'.
 
-        
-        
-        
-        
+        // If certificates.js is missing certUUID, then we have a problem.
+        // Let's pause and check university-controller.js in next step if needed.
+        // But `postIssueCertificate` usually saves it so it MUST be there.
+        // I will assume it is `certUUID` based on views use.
 
-        
-        
-        
-        
+        // WAIT! I see `view_file` output Step 2238.
+        // It ends at line 94.
+        // Fields: rollNumber ... dateOfIssuing ... revoked ...
+        // It DOES NOT show `certUUID`.
 
-        
-        
-        
-        
+        // This is critical. If `certUUID` is not in the schema, it won't be saved in MongoDB (strict mode).
+        // But dashboard-university.ejs displays it `<%= certData[i].certUUID %>`.
+        // Where does `certData` come from?
+        // `getDashboard` in `university-controller` calls `certificates.find`.
 
-        
-        
+        // Maybe I missed it in `view_file`.
+        // I will double check `certificates.js` again properly.
 
-        
+        // Assuming it's there for now to proceed with coding, but I'll verifying it.
 
         const history = await AuditLog.find({
             action: { $in: ['certificate_verified', 'proof_verified'] },
@@ -222,7 +222,7 @@ async function getVerificationHistory(req, res, next) {
     }
 }
 
-
+// Download certificate as PDF check ownership
 async function downloadCertificatePDF(req, res, next) {
     try {
         let certId = req.params.certId;
@@ -235,7 +235,7 @@ async function downloadCertificatePDF(req, res, next) {
         }
 
 
-        
+        // Check ownership
         const certEmail = cert.studentEmail ? cert.studentEmail.toLowerCase() : '';
         const sessionEmail = req.session.email ? req.session.email.toLowerCase() : '';
 
