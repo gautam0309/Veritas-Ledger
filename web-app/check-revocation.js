@@ -15,9 +15,9 @@ async function main() {
         const wallet = await getEncryptedWallet(walletPath);
 
         const gateway = new Gateway();
-        
-        
-        
+        // Use an identity that exists (e.g. test2adisr14920251@gmail.com which we updated password for)
+        // Or create a new one. Let's assume we use the one we just fixed.
+        // Wait, we need to know if this identity has issued any certificates.
         const identityLabel = 'test2adisr14920251@gmail.com';
 
         const identity = await wallet.get(identityLabel);
@@ -36,7 +36,7 @@ async function main() {
         const network = await gateway.getNetwork(config.fabric.channelName);
         const contract = network.getContract(config.fabric.chaincodeName);
 
-        
+        // Try to revoke a non-existent cert first to check connectivity
         console.log('Testing Revocation with Non-Existent Cert...');
         try {
             await contract.submitTransaction('revokeCertificate', 'NON_EXISTENT_UUID', 'Test Revocation');
