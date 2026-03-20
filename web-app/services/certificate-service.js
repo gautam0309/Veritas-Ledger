@@ -11,7 +11,7 @@ function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
             return element.certUUID === dbEntry._id.toString();
         });
 
-        if (!chaincodeEntry) continue; 
+        if (!chaincodeEntry) continue; // skip if no matching ledger entry
 
         let isExpired = false;
         if (dbEntry.expiryDate) {
@@ -30,7 +30,7 @@ function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
             rollNumber: dbEntry.rollNumber || 'N/A',
             certUUID: dbEntry._id.toString(),
             hash: chaincodeEntry.certHash,
-            
+            // New fields
             revoked: dbEntry.revoked || false,
             revokedReason: dbEntry.revokedReason || '',
             revokedAt: dbEntry.revokedAt ? moment(dbEntry.revokedAt).format('YYYY-MM-DD') : null,
