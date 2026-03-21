@@ -40,7 +40,7 @@ const universitySchema = new mongoose.Schema({
         select: false
     },
 
-    publicKey: {   
+    publicKey: {   //hex value of key
         type: String,
         required: true,
         minlength: 10
@@ -72,10 +72,10 @@ universitySchema.statics.validateByCredentials = function (email, password) {
         }
 
         return new Promise((resolve, reject) => {
-            
+            // Use bcrypt.compare to compare password and user.password
             bcrypt.compare(password, user.password, (err, res) => {
                 if (res) {
-                    
+                    //Login was successful. Signals a successful login. Update
                     resolve(user);
                 } else {
                     reject();
@@ -102,7 +102,7 @@ universitySchema.pre('save', async function () {
 
 universitySchema.index({ "email": 1 }, { unique: true });
 let universities = mongoose.model("universities", universitySchema);
-universities.createIndexes();  
+universities.createIndexes();  //idempotent operation. Only called once.  (Calling createIndex manually like this is perfectly fine if autoIndex is turned off)
 
 module.exports = universities;
 
