@@ -4,7 +4,7 @@ const logger = require('../services/logger');
 
 
 const opts = {
-    points: 20, 
+    points: 20, // Each request consumes 1 point.
     duration: 1,
 };
 
@@ -26,7 +26,7 @@ const rateLimiterMiddlewareInMemory = (req, res, next) => {
 
 const strictOpts = {
     points: 10,
-    duration: 60 * 15, 
+    duration: 60 * 15, // 15 minutes
     blockDuration: 60 * 15,
 };
 
