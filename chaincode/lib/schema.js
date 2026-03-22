@@ -1,9 +1,9 @@
-
-
-
-
-
-
+// eg UniversitySchema = {
+//     dataType : "schema",
+//     id: "v1",
+//     ordering: ["studentName", "studentEmail", "universityName", "universityEmail", "major", "departmentName", "cgpa"],
+//     certificateType: "university degree"
+// }
 
 
 class Schema {
