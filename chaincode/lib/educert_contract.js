@@ -1,6 +1,6 @@
 'use strict';
 
-
+// Fabric smart contract class
 const { Contract } = require('fabric-contract-api');
 const Certificate = require('./certificate');
 const UniversityProfile = require('./university_profile');
@@ -25,26 +25,26 @@ class EducertContract extends Contract {
     async issueCertificate(ctx, certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK) {
         console.log("============= START : Issue Certificate ===========");
 
-        
+        // 1. Access Control: Only identities from Org1 (University Org) can issue
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error(`Unauthorized: Organization ${mspId} is not allowed to issue certificates.`);
         }
 
-        
+        // 2. ABAC: Get issuer email from identity attributes
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         if (!userEmail) {
             throw new Error('Unauthorized: Client identity is missing the required email attribute.');
         }
 
-        
+        // Check if certificate already exists to prevent overwrite
         const exists = await ctx.stub.getState("CERT" + certUUID);
         if (exists && exists.length > 0) {
             throw new Error(`Certificate with UUID ${certUUID} already exists on the ledger.`);
         }
 
-        
-        
+        // 2.1 ABAC Verification: Ensure the caller's registered public key matches the provided universityPK
+        // This prevents Category 2/9 Cross-University Issuance (using someone else's PK)
         const uniProfileAsBytes = await ctx.stub.getState("UNI_EMAIL_" + userEmail);
         if (!uniProfileAsBytes || uniProfileAsBytes.length === 0) {
             throw new Error(`Unauthorized: University profile for ${userEmail} not found. Please register first.`);
@@ -54,7 +54,7 @@ class EducertContract extends Contract {
             throw new Error(`Unauthorized: Provided Public Key does not match the registered key for ${userEmail}.`);
         }
 
-        
+        // 3. Signature Verification: Verify that the university actually signed this hash
         const isUniSigValid = this._verifySignature(universityPK, certHash, universitySignature);
         if (!isUniSigValid) {
             throw new Error('Invalid University Signature: The certificate hash does not match the provided signature.');
@@ -76,7 +76,7 @@ class EducertContract extends Contract {
     async revokeCertificate(ctx, certUUID, reason) {
         console.log("============= START : Revoke Certificate ===========");
 
-        
+        // 1. Access Control: Only identities from Org1 (University Org) can revoke
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error(`Unauthorized: Organization ${mspId} is not allowed to revoke certificates.`);
@@ -89,12 +89,12 @@ class EducertContract extends Contract {
 
         const certificate = Certificate.deserialize(JSON.parse(certAsBytes.toString()));
 
-        
+        // 2. ABAC: Only the issuing university can revoke its own certificate
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         console.log(`[REVOKE_DEBUG_V10] Revoking Cert ${certUUID}. User: ${userEmail}`);
 
-        
-        
+        // Strict check: fails ONLY if certificate has issuerEmail (New Certs) AND it doesn't match
+        // We also check 'normalized' versions (removing dots) to handle potential formatting mismatches (e.g. gmail dots)
         if (certificate.issuerEmail) {
             console.log(`[REVOKE_DEBUG_V10] Cert Issuer: ${certificate.issuerEmail}`);
             const cleanIssuer = certificate.issuerEmail.replace(/\./g, '');
@@ -112,7 +112,7 @@ class EducertContract extends Contract {
         certificate.revoked = true;
         certificate.revokedReason = reason;
 
-        
+        // Ensure timestamp conversion is safe for BigInt/Long objects
         const txTimestamp = ctx.stub.getTxTimestamp();
         let tsSeconds = txTimestamp.seconds.low !== undefined ? txTimestamp.seconds.low : txTimestamp.seconds;
         if (typeof tsSeconds !== 'number') tsSeconds = Number(tsSeconds);
@@ -130,11 +130,11 @@ class EducertContract extends Contract {
         try {
             let sig = new jsrs.KJUR.crypto.Signature({ "alg": "SHA256withECDSA" });
 
-            
+            // Check if publicKey is PEM or Hex
             if (publicKey.includes('-----BEGIN PUBLIC KEY-----')) {
                 sig.init(publicKey);
             } else {
-                
+                // Assume PK is hex if not PEM
                 sig.init({ "xy": publicKey, "curve": "secp256r1" });
             }
 
@@ -151,7 +151,7 @@ class EducertContract extends Contract {
     async registerUniversity(ctx, name, publicKey, location, description) {
         console.log("============= START : Register University ===========");
 
-        
+        // Access Control: Only Admin or certain roles should register universities
         const mspId = ctx.clientIdentity.getMSPID();
         if (mspId !== 'Org1MSP') {
             throw new Error('Unauthorized: Only Org1MSP admin can register new universities.');
@@ -162,13 +162,13 @@ class EducertContract extends Contract {
             throw new Error('Unauthorized: Client identity is missing the required email attribute.');
         }
 
-        
+        // Check if university already exists
         const exists = await ctx.stub.getState("UNI" + name);
         if (exists && exists.length > 0) {
             throw new Error(`University ${name} is already registered on the ledger.`);
         }
 
-        
+        // 3. Category 3 Fix: Prevent Public Key Collision
         const pkExists = await ctx.stub.getState("PK_" + publicKey);
         if (pkExists && pkExists.length > 0) {
             throw new Error(`Public Key ${publicKey} is already registered by another university.`);
@@ -177,7 +177,7 @@ class EducertContract extends Contract {
         const university = new UniversityProfile(name, publicKey, location, description, userEmail);
         await ctx.stub.putState("UNI" + name, Buffer.from(JSON.stringify(university)));
 
-        
+        // Store indexes for email and PK lookup (Category 2/9 optimization)
         await ctx.stub.putState("UNI_EMAIL_" + userEmail, Buffer.from(JSON.stringify(university)));
         await ctx.stub.putState("PK_" + publicKey, Buffer.from(name));
 
@@ -259,7 +259,7 @@ class EducertContract extends Contract {
                     let jsonRes = JSON.parse(res.value.value.toString('utf8'));
                     let cert = Certificate.deserialize(jsonRes);
 
-                    
+                    // ABAC Check: inherently filtered by studentPK in selector
                     certArray.push(cert);
                 } catch (err) {
                     console.log("Failed to instantiate Certificate object from JSON\n" + err);
@@ -297,9 +297,9 @@ class EducertContract extends Contract {
 
         if (callerEmail) {
             let universityAsBytes = await ctx.stub.getState("UNI" + callerEmail);
-            
-            
-            
+            // In the original getAllCertificateByStudent, it checked `callerEmail`, but standard is `UNI` + name for state keys.
+            // Let's implement the core ABAC check based on the caller email matching the university's email
+            // But we actually only have universityPK as the input.
         }
 
         let certArray = [];
@@ -309,18 +309,18 @@ class EducertContract extends Contract {
             try {
                 let cert = Certificate.deserialize(results[i].value);
 
-                
+                // ABAC Check: Only admin or the issuing university can view this history
                 if (callerEmail === 'admin' ||
                     (callerEmail && cert.issuerEmail && callerEmail.replace(/\./g, '') === cert.issuerEmail.replace(/\./g, ''))) {
                     certArray.push(cert);
                 } else if (!cert.issuerEmail && callerEmail === 'admin') {
-                    
+                    // Legacy certificates without issuerEmail: only admins can view them in bulk
                     certArray.push(cert);
                 }
             } catch (err) {
                 console.log("Failed to instantiate Certificate object from JSON in getAllCertificateByUniversity\n" + err);
                 console.log("DATA TYPE:  " + typeof results[i])
-                
+                // Only push raw if authorized as admin
                 if (callerEmail === 'admin') {
                     certArray.push(results[i]);
                 }
@@ -334,7 +334,7 @@ class EducertContract extends Contract {
 
     
     async queryAll(ctx) {
-        
+        // Category 9 Fix: Restrict queryAll to admins only
         const mspId = ctx.clientIdentity.getMSPID();
         const userEmail = ctx.clientIdentity.getAttributeValue('email');
         if (mspId !== 'Org1MSP' || userEmail !== 'admin') {
