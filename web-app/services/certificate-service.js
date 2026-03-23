@@ -1,7 +1,12 @@
 const moment = require('moment');
 
 
-
+/**
+ * Merge certificate data from Database and Blockchain Ledger
+ * @param {certificates[]} dbRecordArray
+ * @param ledgerRecordArray
+ * @returns {certificates[]}
+ */
 function mergeCertificateData(dbRecordArray, ledgerRecordArray) {
     let certMergedDataArray = [];
 
