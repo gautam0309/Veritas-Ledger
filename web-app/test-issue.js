@@ -10,7 +10,7 @@ const chaincode = require('./services/fabric/chaincode');
 async function run() {
     try {
         let certData = {
-            rollNumber: "2301201182", 
+            rollNumber: "2301201182", // Target student Ira Malhotra
             studentEmail: "2301201182@krmu.edu.in",
             studentName: "Ira Malhotra",
             universityName: "KRMU",
