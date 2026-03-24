@@ -39,7 +39,7 @@ async function postVerify(req, res, next) {
         if (proofIsCorrect) {
             let certificateDbObject = await certificates.findOne({ "_id": proofObject.certUUID });
 
-            
+            // Check revocation
             if (certificateDbObject.revoked) {
                 await AuditLog.create({
                     action: 'certificate_verified',
@@ -54,7 +54,7 @@ async function postVerify(req, res, next) {
                 });
             }
 
-            
+            // Check expiry
             if (certificateDbObject.expiryDate && new Date(certificateDbObject.expiryDate) < new Date()) {
                 await AuditLog.create({
                     action: 'certificate_verified',
@@ -76,16 +76,16 @@ async function postVerify(req, res, next) {
                 ipAddress: req.ip
             });
 
-            
+            // Fetch raw ledger data for "Etherscan-like" view
             let ledgerData = null;
             try {
-                
+                // Workaround: Chaincode doesn't have queryCertificate, so we fetch all student certs and filter
                 let student = await students.findOne({ email: certificateDbObject.studentEmail });
                 if (student) {
                     let allCerts = await chaincode.invokeChaincode("getAllCertificateByStudent",
                         [student.publicKey], true, "admin");
 
-                    
+                    // Find the specific cert
                     ledgerData = allCerts.find(c => c.certUUID === proofObject.certUUID) || null;
                     if (!ledgerData) throw new Error("Certificate not found in ledger array");
                 } else {
@@ -93,7 +93,7 @@ async function postVerify(req, res, next) {
                 }
 
             } catch (ledgerErr) {
-                
+                // logger.error("Failed to fetch ledger data: " + ledgerErr);
                 ledgerData = { error: "Ledger Query Failed: " + (ledgerErr.message || ledgerErr) };
             }
 
@@ -138,7 +138,7 @@ async function postVerifyByRollNumber(req, res, next) {
             });
         }
 
-        
+        // Check revocation
         if (certificateDbObject.revoked) {
             await AuditLog.create({
                 action: 'certificate_verified',
@@ -153,7 +153,7 @@ async function postVerifyByRollNumber(req, res, next) {
             });
         }
 
-        
+        // Check expiry
         if (certificateDbObject.expiryDate && new Date(certificateDbObject.expiryDate) < new Date()) {
             await AuditLog.create({
                 action: 'certificate_verified',
@@ -168,7 +168,7 @@ async function postVerifyByRollNumber(req, res, next) {
             });
         }
 
-        
+        // Verify on blockchain
         let allAttributes = ["universityName", "major", "departmentName", "cgpa"];
         let disclosedData = {};
         allAttributes.forEach(attr => {
@@ -188,23 +188,23 @@ async function postVerifyByRollNumber(req, res, next) {
                 ipAddress: req.ip
             });
 
-            
+            // Fetch raw ledger data for "Etherscan-like" view
             let ledgerData = null;
             try {
-                
+                // Workaround: Chaincode doesn't have queryCertificate, so we fetch all student certs and filter
                 let student = await students.findOne({ email: certificateDbObject.studentEmail });
                 if (student) {
                     let allCerts = await chaincode.invokeChaincode("getAllCertificateByStudent",
                         [student.publicKey], true, "admin");
 
-                    
+                    // Find the specific cert
                     ledgerData = allCerts.find(c => c.certUUID === certificateDbObject._id.toString()) || null;
                     if (!ledgerData) throw new Error("Certificate not found in ledger array");
                 } else {
                     throw new Error("Student not found for ledger query");
                 }
             } catch (ledgerErr) {
-                
+                // logger.error("Failed to fetch ledger data: " + ledgerErr);
                 ledgerData = { error: "Ledger Query Failed: " + (ledgerErr.message || ledgerErr) };
             }
 
@@ -230,7 +230,7 @@ async function postVerifyByRollNumber(req, res, next) {
     }
 }
 
-
+// Bulk Verification Page
 async function getBulkVerifyPage(req, res, next) {
     res.render("verify-bulk", {
         title, root,
@@ -240,7 +240,7 @@ async function getBulkVerifyPage(req, res, next) {
     });
 }
 
-
+// Process Bulk Verification CSV
 async function postBulkVerify(req, res, next) {
     try {
         if (!req.file) {
@@ -288,7 +288,7 @@ async function postBulkVerify(req, res, next) {
                     continue;
                 }
 
-                
+                // Verify on blockchain
                 let disclosedData = {};
                 allAttributes.forEach(attr => {
                     if (cert[attr]) disclosedData[attr] = cert[attr];
