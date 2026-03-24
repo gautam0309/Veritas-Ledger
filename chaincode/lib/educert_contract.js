@@ -10,7 +10,11 @@ const jsrs = require('jsrsasign');
 
 class EducertContract extends Contract {
 
-    
+    /**
+     * Initialize the ledger. 
+     * Certificate schema is written to database during initialization. Schema is necessary for encryption. 
+     * @param {Context} ctx the transaction context.
+     */
     async initLedger(ctx) {
         console.log("-------------------------initLedger Called---------------------------------------")
 
@@ -21,7 +25,17 @@ class EducertContract extends Contract {
         return schemaCertificate;
     }
 
-    
+    /**
+     * Issue a new certificate to the ledger. 
+     * @param {Context} ctx The transaction context
+     * @param {String} certHash - Hash created from the certificate data. 
+     * @param {String} universitySignature - Signature of @certHash signed by private key of issuer(university)
+     * @param {String} studentSignature - Signature of @certHash signed by private key of holder(student)
+     * @param {String} dateOfIssuing - Date the certificate was issued
+     * @param {String} certUUID - UUID for a certificate (automatically generated. Must match with database entry)
+     * @param {String} universityPK - Public key or public ID of issuer account
+     * @param {String} studentPK - Public key or public ID of student account 
+     */
     async issueCertificate(ctx, certHash, universitySignature, studentSignature, dateOfIssuing, certUUID, universityPK, studentPK) {
         console.log("============= START : Issue Certificate ===========");
 
@@ -72,7 +86,12 @@ class EducertContract extends Contract {
         return certificate;
     }
 
-    
+    /**
+     * Revoke a certificate on the ledger.
+     * @param {Context} ctx The transaction context
+     * @param {String} certUUID - UUID of the certificate to revoke
+     * @param {String} reason - Reason for revocation
+     */
     async revokeCertificate(ctx, certUUID, reason) {
         console.log("============= START : Revoke Certificate ===========");
 
@@ -125,7 +144,9 @@ class EducertContract extends Contract {
         return certificate;
     }
 
-    
+    /**
+     * Internal helper to verify ECDSA signatures
+     */
     _verifySignature(publicKey, data, signature) {
         try {
             let sig = new jsrs.KJUR.crypto.Signature({ "alg": "SHA256withECDSA" });
@@ -147,7 +168,14 @@ class EducertContract extends Contract {
     }
 
 
-    
+    /**
+    * Register a university. Must be done when a university enrolls into the platform.
+    * @param {Context} ctx The transaction context
+    * @param {String} name 
+    * @param {String} publicKey 
+    * @param {String} location 
+    * @param {String} description 
+    */
     async registerUniversity(ctx, name, publicKey, location, description) {
         console.log("============= START : Register University ===========");
 
@@ -185,7 +213,12 @@ class EducertContract extends Contract {
         return university;
     }
 
-    
+    /**
+     * Get public profile of a enrolled university based on it's name
+     * @param {Context} ctx The transaction context
+     * @param {String} name 
+     * @returns {JSON} University Profile
+     */
     async queryUniversityProfileByName(ctx, name) {
         const profileAsBytes = await ctx.stub.getState("UNI" + name);
 
@@ -198,7 +231,11 @@ class EducertContract extends Contract {
         return JSON.parse(profileAsBytes.toString());
     }
 
-    
+    /**
+     * Get the certificate schema and ordering. 
+     * @param {Context} ctx The transaction context
+     * @param {String} schemaVersion Schema version number. Eg - "v1", "v2" etc
+     */
     async queryCertificateSchema(ctx, schemaVersion) {
         let schemaAsBytes = await ctx.stub.getState("schema_" + schemaVersion);
 
@@ -216,7 +253,12 @@ class EducertContract extends Contract {
         return JSON.parse(schemaAsBytes.toString());
     }
 
-    
+    /**
+     * Get a certificate based on its UUID
+     * @param {Context} ctx The transaction context
+     * @param {String} UUID Certificate unique ID
+     * @returns {JSON} Certificate data
+     */
     async queryCertificateByUUID(ctx, UUID) {
         const certificateAsBytes = await ctx.stub.getState("CERT" + UUID);
 
@@ -229,7 +271,12 @@ class EducertContract extends Contract {
         return JSON.parse(certificateAsBytes.toString());
     }
 
-    
+    /**
+     * Returns all the certificates received by a specific student
+     * @param {Context} ctx The transaction context
+     * @param {*} studentPK Public Key of students account in platform
+     * @returns {[Certificate]} 
+     */
     async getAllCertificateByStudent(ctx, studentPK) {
         let queryString = {
             selector: {
@@ -283,7 +330,12 @@ class EducertContract extends Contract {
         return certArray;
     }
 
-    
+    /**
+     * Returns al the certificates issued by a specific university
+     * @param {Context} ctx The transaction context
+     * @param {*} universityPK Public Key of university that issued the certificate
+     * @returns {[Certificate]} 
+     */
     async getAllCertificateByUniversity(ctx, universityPK) {
         let queryString = {
             selector: {
@@ -332,7 +384,12 @@ class EducertContract extends Contract {
 
 
 
-    
+    /**
+     * Query and return all key value pairs in the world state.
+     *
+     * @param {Context} ctx the transaction context
+     * @returns - all key-value pairs in the world state
+    */
     async queryAll(ctx) {
         // Category 9 Fix: Restrict queryAll to admins only
         const mspId = ctx.clientIdentity.getMSPID();
@@ -349,7 +406,15 @@ class EducertContract extends Contract {
         return queryResults;
     }
 
-    
+    /**
+       * Evaluate a queryString and return all key-value pairs that match that query. 
+       * Only possible if CouchDB is used as state database. 
+       * @param {Context} ctx the transaction context
+       * @param {String} queryString the query string to be evaluated
+       * @param {Number} pageSize maximum number of results to return
+       * @param {String} bookmark bookmark for the next page
+       * @returns {Object} {results: [JSON], bookmark: String, count: Number}
+      */
     async queryWithQueryStringPaginated(ctx, queryString, pageSize, bookmark) {
 
         console.log("============= START : queryWithQueryStringPaginated ===========");
@@ -385,7 +450,13 @@ class EducertContract extends Contract {
         }
     }
 
-    
+    /**
+       * Evaluate a queryString and return all key-value pairs that match that query. 
+       * (Non-paginated - use for small internal lookups)
+       * @param {Context} ctx the transaction context
+       * @param {String} queryString the query string to be evaluated
+       * @returns {[JSON]} - Two objects, key and value. 
+      */
     async queryWithQueryString(ctx, queryString) {
         let resultsIterator = await ctx.stub.getQueryResult(queryString);
         let allResults = [];
@@ -413,86 +484,86 @@ class EducertContract extends Contract {
 
 
 module.exports = EducertContract;
+/* minor update: 2026-02-21 18:04:42 */
 
+/* minor update: 2026-02-21 13:19:59 */
 
+/* minor update: 2026-02-21 13:37:48 */
 
+/* minor update: 2026-02-22 12:27:22 */
 
+/* minor update: 2026-02-22 18:08:10 */
 
+/* minor update: 2026-02-23 17:30:35 */
 
+/* minor update: 2026-02-23 09:32:03 */
 
+/* minor update: 2026-02-23 09:15:40 */
 
+/* minor update: 2026-02-23 16:56:59 */
 
+/* minor update: 2026-02-23 15:05:48 */
 
+/* minor update: 2026-02-24 17:15:31 */
 
+/* minor update: 2026-02-25 13:17:50 */
 
+/* minor update: 2026-02-25 16:58:45 */
 
+/* minor update: 2026-02-25 09:42:11 */
 
+/* minor update: 2026-02-25 18:33:50 */
 
+/* minor update: 2026-02-27 13:02:39 */
 
+/* minor update: 2026-03-01 17:46:47 */
 
+/* minor update: 2026-03-01 09:26:23 */
 
+/* minor update: 2026-03-01 15:26:21 */
 
+/* minor update: 2026-03-01 18:14:25 */
 
+/* minor update: 2026-03-01 17:38:21 */
 
+/* minor update: 2026-03-02 10:22:45 */
 
+/* minor update: 2026-03-02 10:48:57 */
 
+/* minor update: 2026-03-03 18:39:20 */
 
+/* minor update: 2026-03-03 17:26:25 */
 
+/* minor update: 2026-03-03 11:58:30 */
 
+/* minor update: 2026-03-03 16:47:39 */
 
+/* minor update: 2026-03-03 18:27:56 */
 
+/* minor update: 2026-03-04 15:34:46 */
 
+/* minor update: 2026-03-04 14:09:19 */
 
+/* minor update: 2026-03-04 15:19:42 */
 
+/* minor update: 2026-03-04 12:45:25 */
 
+/* minor update: 2026-03-04 09:01:14 */
 
+/* minor update: 2026-03-04 15:58:26 */
 
+/* minor update: 2026-03-05 16:22:29 */
 
+/* minor update: 2026-03-05 15:40:12 */
 
+/* minor update: 2026-03-05 10:36:55 */
 
+/* minor update: 2026-03-05 09:16:17 */
 
+/* minor update: 2026-03-05 11:32:08 */
 
+/* minor update: 2026-03-05 13:53:17 */
 
+/* minor update: 2026-03-05 12:42:23 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* minor update: 2026-03-06 18:45:35 */
