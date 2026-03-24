@@ -51,7 +51,7 @@ const certificateSchema = new mongoose.Schema({
         trim: true
     },
     cgpa: {
-        type: String, 
+        type: String, //Saved as string because easier to hash.
         required: true,
         validate: {
             validator: (v) => validator.isFloat(v, { min: 0, max: 10 }),
@@ -62,7 +62,7 @@ const certificateSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    
+    // --- New fields for enhancements ---
     revoked: {
         type: Boolean,
         default: false
@@ -77,10 +77,10 @@ const certificateSchema = new mongoose.Schema({
     },
     expiryDate: {
         type: Date,
-        default: null  
+        default: null  // null = no expiry
     },
     certificateImage: {
-        type: String,  
+        type: String,  // file path to uploaded image/PDF
         default: null
     }
 });
@@ -88,7 +88,7 @@ const certificateSchema = new mongoose.Schema({
 certificateSchema.index({ "studentEmail": 1 });
 certificateSchema.index({ "universityEmail": 1 });
 certificateSchema.index({ "rollNumber": 1 });
-
+// Prevent duplicate certificates: same roll number at same university
 certificateSchema.index({ "rollNumber": 1, "universityEmail": 1 }, { unique: true });
 
 let certificates = mongoose.model("certificates", certificateSchema);
