@@ -12,7 +12,9 @@ const chaincode = require('../services/fabric/chaincode');
 let title = "Verification Portal";
 let root = "verify";
 
-
+/**
+ * Verify certificate using Merkle tree proof object (advanced method).
+ */
 async function postVerify(req, res, next) {
     try {
         let proofObject = req.body.proofObject;
@@ -119,7 +121,9 @@ async function postVerify(req, res, next) {
     }
 }
 
-
+/**
+ * Verify certificate using Roll Number (simple method for employers).
+ */
 async function postVerifyByRollNumber(req, res, next) {
     try {
         let rollNumber = req.body.rollNumber;
