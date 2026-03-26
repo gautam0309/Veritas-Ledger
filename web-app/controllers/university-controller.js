@@ -14,7 +14,7 @@ const fs = require('fs');
 const { parse } = require('csv-parse/sync');
 const { validationResult } = require('express-validator');
 
-
+// Multer config for cert image upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, path.join(__dirname, '../public/uploads'));
@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, 
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     fileFilter: function (req, file, cb) {
         const allowedTypes = /jpeg|jpg|png|pdf/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -36,7 +36,7 @@ const upload = multer({
     }
 });
 
-
+// Multer config for CSV upload
 const csvUpload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
@@ -71,7 +71,7 @@ async function postRegisterUniversity(req, res, next) {
             [req.body.name, keys.publicKey, location, req.body.description], false, req.body.email);
         logger.debug(`University Registered. Ledger profile: ${result}`);
 
-        
+        // Audit log
         await AuditLog.create({
             action: 'registration',
             performedBy: req.body.email,
@@ -79,7 +79,7 @@ async function postRegisterUniversity(req, res, next) {
             ipAddress: req.ip
         });
 
-        
+        // Email notification
         emailService.notifyRegistration(req.body.email, req.body.name, 'university');
 
         res.render("register-success", {
@@ -106,12 +106,12 @@ async function postLoginUniversity(req, res, next) {
     try {
         let universityObject = await universities.validateByCredentials(req.body.email, req.body.password)
 
-        
+        // Prevent Session Fixation (OWASP Cheat Sheet)
         await new Promise((resolve, reject) => {
             req.session.regenerate((err) => {
                 if (err) reject(err);
 
-                
+                // Re-create the CSRF token for the new session 
                 const crypto = require('crypto');
                 req.session.csrfToken = crypto.randomBytes(32).toString('hex');
                 res.locals.csrfToken = req.session.csrfToken;
@@ -163,19 +163,19 @@ async function postIssueCertificate(req, res, next) {
             dateOfIssuing: req.body.date,
         };
 
-        
+        // Add optional expiry date
         if (req.body.expiryDate) {
             certData.expiryDate = req.body.expiryDate;
         }
 
-        
+        // Add certificate image path if uploaded
         if (req.file) {
             certData.certificateImage = '/uploads/' + req.file.filename;
         }
 
         let serviceResponse = await universityService.issueCertificate(certData);
 
-        
+        // Audit log
         await AuditLog.create({
             action: 'certificate_issued',
             performedBy: req.session.email,
@@ -184,7 +184,7 @@ async function postIssueCertificate(req, res, next) {
             ipAddress: req.ip
         });
 
-        
+        // Email notification
         emailService.notifyCertificateIssued(req.body.studentEmail, req.body.studentName, req.session.name, req.body.major);
 
         if (serviceResponse) {
@@ -225,7 +225,7 @@ async function getDashboard(req, res, next) {
     }
 }
 
-
+// Revoke a certificate
 async function postRevokeCertificate(req, res, next) {
     try {
         let certId = req.body.certId;
@@ -236,12 +236,12 @@ async function postRevokeCertificate(req, res, next) {
             return res.status(404).json({ error: 'Certificate not found' });
         }
 
-        
+        // Only the issuing university can revoke
         if (cert.universityEmail !== req.session.email) {
             return res.status(403).json({ error: 'You can only revoke certificates issued by your university' });
         }
 
-        
+        // On-chain revocation
         await universityService.revokeCertificateOnChain(certId, reason, req.session.email);
 
         cert.revoked = true;
@@ -257,7 +257,7 @@ async function postRevokeCertificate(req, res, next) {
             ipAddress: req.ip
         });
 
-        
+        // Email notification
         emailService.notifyCertificateRevoked(cert.studentEmail, cert.studentName, req.session.name, reason);
 
         return res.redirect('/university/dashboard');
@@ -267,7 +267,7 @@ async function postRevokeCertificate(req, res, next) {
     }
 }
 
-
+// Download certificate as PDF
 async function downloadCertificatePDF(req, res, next) {
     try {
         let certId = req.params.certId;
@@ -277,7 +277,7 @@ async function downloadCertificatePDF(req, res, next) {
             return res.status(404).send('Certificate not found');
         }
 
-        
+        // IDOR Fix: Only the issuing university can download.
         if (cert.universityEmail !== req.session.email) {
             return res.status(403).send('Unauthorized: You can only download certificates issued by your university.');
         }
@@ -303,7 +303,7 @@ async function downloadCertificatePDF(req, res, next) {
     }
 }
 
-
+// Batch CSV issuance page
 async function getBatchIssuePage(req, res, next) {
     res.render("batch-issue", {
         title, root,
@@ -313,7 +313,7 @@ async function getBatchIssuePage(req, res, next) {
     });
 }
 
-
+// Process batch CSV
 async function postBatchIssue(req, res, next) {
     try {
         if (!req.file) {
@@ -396,8 +396,8 @@ async function postBatchIssue(req, res, next) {
 }
 
 
-
-
+// Get analytics data for charts
+// Batch CSV student registration page
 async function getBatchRegisterPage(req, res, next) {
     res.render("batch-register", {
         title, root,
@@ -407,7 +407,7 @@ async function getBatchRegisterPage(req, res, next) {
     });
 }
 
-
+// Process batch student registration
 async function postBatchRegister(req, res, next) {
     try {
         if (!req.file) {
@@ -502,7 +502,7 @@ async function getAnalyticsData(req, res, next) {
         const universityEmail = req.session.email;
         const range = req.query.range || '6m';
 
-        
+        // 1. Certificates by Department & Avg CGPA
         const deptStats = await certificates.aggregate([
             { $match: { universityEmail: universityEmail } },
             {
@@ -514,20 +514,20 @@ async function getAnalyticsData(req, res, next) {
             }
         ]);
 
-        
+        // 2. Issuance over time
         let startDate = new Date();
-        let endDate = new Date(); 
+        let endDate = new Date(); // Defaults to now
 
         if (range === 'custom' && req.query.startDate && req.query.endDate) {
             startDate = new Date(req.query.startDate);
             endDate = new Date(req.query.endDate);
 
-            
+            // Basic Date Validation
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                 return res.status(400).json({ error: "Invalid date format provided" });
             }
 
-            
+            // Ensure end date includes the full day
             endDate.setHours(23, 59, 59, 999);
         } else if (range === '6m') {
             startDate.setMonth(startDate.getMonth() - 6);
@@ -538,7 +538,7 @@ async function getAnalyticsData(req, res, next) {
         } else if (range === '3y') {
             startDate.setFullYear(startDate.getFullYear() - 3);
         } else if (range === 'lifetime') {
-            startDate = new Date(0); 
+            startDate = new Date(0); // Beginning of time
         }
 
         const timeStats = await certificates.aggregate([
