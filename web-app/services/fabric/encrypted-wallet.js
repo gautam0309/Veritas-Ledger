@@ -36,7 +36,10 @@ function decrypt(text) {
     }
 }
 
-
+/**
+ * Returns a Proxy over the FileSystemWallet that dynamically encrypts and decrypts
+ * the privateKey component of X.509 identities before they hit the disk.
+ */
 async function getEncryptedWallet(walletPath) {
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
