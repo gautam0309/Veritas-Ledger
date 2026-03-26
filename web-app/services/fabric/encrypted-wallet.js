@@ -1,7 +1,7 @@
 const { Wallets } = require('fabric-network');
 const crypto = require('crypto');
 
-
+// Use environment variable for encryption, derive a 32-byte key
 const secret = process.env.EXPRESS_SESSION_SECRET || 'fallback_veritas_secret_2026';
 const ENCRYPTION_KEY = crypto.scryptSync(secret, 'veritas_salt', 32);
 const IV_LENGTH = 16;
@@ -18,9 +18,9 @@ function encrypt(text) {
 
 function decrypt(text) {
     if (!text) return text;
-    
+    // Check if it's actually encrypted with our scheme
     let textParts = text.split(':');
-    if (textParts.length !== 3) return text; 
+    if (textParts.length !== 3) return text; // Probably unencrypted legacy key
 
     try {
         let iv = Buffer.from(textParts[0], 'hex');
@@ -32,7 +32,7 @@ function decrypt(text) {
         decrypted += decipher.final('utf8');
         return decrypted;
     } catch (e) {
-        return text; 
+        return text; // Fallback if decryption fails (e.g., plain text that happens to have colons)
     }
 }
 
@@ -53,7 +53,7 @@ async function getEncryptedWallet(walletPath) {
 
     wallet.put = async function (label, identity) {
         if (identity && identity.credentials && identity.credentials.privateKey) {
-            
+            // Create a deep copy so we don't mutate the in-memory object used by the caller
             const identityCopy = JSON.parse(JSON.stringify(identity));
             identityCopy.credentials.privateKey = encrypt(identityCopy.credentials.privateKey);
             return originalPut(label, identityCopy);
