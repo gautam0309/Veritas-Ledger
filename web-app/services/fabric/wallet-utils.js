@@ -4,7 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
 
-
+/**
+ * Adds a new user/entity to the wallet. Creates a separate json file to store hex keys of the user.
+ * @param {FabricCAServices.IEnrollResponse} enrollmentObject
+ * @param {String} userName
+ * @returns {Promise<{} | Error>} public and private key in hex format;
+ */
 async function createNewWalletEntity(enrollmentObject, userName) {
     const { getEncryptedWallet } = require('./encrypted-wallet');
     const wallet = await getEncryptedWallet(config.fabric.walletPath);
@@ -31,6 +36,9 @@ async function createNewWalletEntity(enrollmentObject, userName) {
     return hexKeyEntity;
 }
 
-
+/**
+ * Note: loadHexKeysFromWallet was removed as it relied on insecure cleartext JSON storage.
+ * Digital signatures and key management should be handled through the Fabric Network SDK.
+ */
 
 module.exports = { createNewWalletEntity };
