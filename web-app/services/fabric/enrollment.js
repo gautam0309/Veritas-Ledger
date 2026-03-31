@@ -11,7 +11,10 @@ const logger = require('../logger');
 //Connection Profile;
 const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
 
-
+/**
+ * Enrolls Admin object into wallet.
+ * @returns {Promise<{Keys}>}
+ */
 async function enrollAdmin() {
     try {
 
@@ -41,7 +44,12 @@ async function enrollAdmin() {
     }
 }
 
-
+/**
+ * Enrolls a generic user into the client (Used for students and universities)
+ * @param email
+ * @returns {Promise<{Keys} | Error>}
+ * TODO: There's no way to differentiate students and universities in the MSP this way. Possibly consider changing.
+ */
 async function registerUser(email) {
     try {
         // Create a new CA client for interacting with the CA.
