@@ -10,7 +10,11 @@ let ecdsa = new jsrs.ECDSA({ 'curve': 'secp256r1' });
 let schemaCache = {};
 
 
-
+/**
+ * Generate merkle tree from certificate data using a pre-defined schema
+ * @param {certificates} certData
+ * @returns {Promise<MerkleTree>}
+ */
 async function generateMerkleTree(certData) {
     let cacheKey = certData.universityEmail + "_v1";
     let certSchema;
@@ -50,13 +54,22 @@ async function generateMerkleTree(certData) {
     return mTree;
 }
 
-
+/**
+ * Generate merkle tree root from certificate data using a pre-defined schema
+ * @param {certificates} certData
+ * @returns {Promise<string>}
+ */
 async function generateMerkleRoot(certData) {
     let mTree = await generateMerkleTree(certData)
     return mTree.getRoot().toString('hex');
 }
 
-
+/**
+ * Sign a String with a private key using Elliptic Curve Digital Signature Algorithm
+ * @param stringToSign
+ * @param signerEmail
+ * @returns {Promise<String>}
+ */
 async function createDigitalSignature(stringToSign, signerEmail) {
     const wallet = await getEncryptedWallet(config.fabric.walletPath);
     const identity = await wallet.get(signerEmail);
@@ -77,7 +90,18 @@ async function createDigitalSignature(stringToSign, signerEmail) {
     return signedData;
 }
 
-
+/**
+ * Map parameter names to their indexes in certificate ordering schema.
+ * @param {String[]} paramsToShare - Name of parameters that are to be shared.
+ * @param {String[]} ordering - Order of keys in merkle tree generation. Look at Schema.ordering in chaincode
+ * @returns {int[]} Index oof the params to share based on schema ordering. Eg - [2,3]
+ *
+ * eg
+ * Input, paramsToShare: ["departmentName", "cgpa"].
+ * ordering: ["universityName", "major", "departmentName", "cgpa"]
+ * Output: [2,3]
+ *
+ */
 function getParamsIndexArray(paramsToShare, ordering) {
 
     let paramsToShareIndex = paramsToShare.map((element) => {
@@ -89,7 +113,13 @@ function getParamsIndexArray(paramsToShare, ordering) {
 }
 
 
-
+/**
+ * Generate a merkleTree Proof object.
+ * @param {String[]} paramsToShare - Name of parameters that are to be shared.
+ * @param {String} certUUID
+ * @param {String} studentEmail - Certiificate holder email. Used to invoke chaincode.
+ * @returns {Promise<Buffer[]>} proofObject
+ */
 async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
     let certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
         ["v1"], true, studentEmail);
@@ -112,7 +142,13 @@ async function generateCertificateProof(paramsToShare, certUUID, studentEmail) {
 }
 
 
-
+/**
+ * Verify Merkle Tree Proof
+ * @param {Promise<Buffer[]>} mTreeProof
+ * @param {Object} disclosedData - Key value pair containing the disclosed data. Eg - {"attributeName" : "attributeValue" }
+ * @param {String} certUUID
+ * @returns {Promise<boolean>}
+ */
 async function verifyCertificateProof(mTreeProof, disclosedData, certUUID) {
     let certSchema = await chaincode.invokeChaincode("queryCertificateSchema",
         ["v1"], true, "admin");
