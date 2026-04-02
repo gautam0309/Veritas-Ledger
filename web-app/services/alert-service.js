@@ -3,7 +3,10 @@ const path = require('path');
 const logger = require('./logger');
 const AuditLog = require('../database/models/auditlog');
 
-
+/**
+ * Alert Service (SAMM Operations L3)
+ * Monitors AuditLog and app.log for security anomalies.
+ */
 class AlertService {
     constructor() {
         this.logFilePath = path.join(__dirname, '../app.log');
@@ -11,14 +14,18 @@ class AlertService {
         this.unauthorizedAccessThreshold = 5;
     }
 
-    
+    /**
+     * Start the monitoring interval
+     */
     start() {
         logger.info("Alert Service started. Monitoring for security anomalies...");
         // Check every 5 minutes
         setInterval(() => this.scanAnomalies(), 5 * 60 * 1000);
     }
 
-    
+    /**
+     * Scan AuditLog and app.log for suspicious patterns
+     */
     async scanAnomalies() {
         try {
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
