@@ -7,7 +7,12 @@
 
 
 class Schema {
-    
+    /**
+    * Schema for a certain type of certificate
+    * @param {String} certificateType 
+    * @param {String} id 
+    * @param {String[]} ordering 
+    */
     constructor(certificateType, id, ordering){
         this.certificateType = certificateType;
         this.id = id;
@@ -17,7 +22,11 @@ class Schema {
     
     
     
-    
+    /**
+    * Instantiate object from json argument. 
+    * @param {json} data json data of a Profile instance 
+    * @returns {UniversityProfile} instantiated University Profile object. 
+    */
     static deserialize(data) {
         return new Schema(data.certificateType, data.id, data.ordering);
     }
