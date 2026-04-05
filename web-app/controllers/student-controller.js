@@ -7,19 +7,37 @@ let AuditLog = require('../database/models/auditlog');
 let certificates = require('../database/models/certificates');
 let emailService = require('../services/email-service');
 const pdfGenerator = require('../services/pdf-generator');
+let identityHelper = require('../services/identity-helper');
 const { validationResult } = require('express-validator');
+
+/*
+ * ============================================================================
+ * FILE: web-app/controllers/student-controller.js
+ * ============================================================================
+ * 
+ * PURPOSE:
+ *   Handles all business logic for students: registering, logging in,
+ *   viewing their dashboard of certificates, downloading PDFs, and tracking
+ *   verification history.
+ * ============================================================================
+ */
 
 let title = "Student Dashboard";
 let root = "student";
 
-
+/*
+ * ===== FUNCTION: postRegisterStudent =====
+ * WHAT: Registers a new student simultaneously in MongoDB and the Fabric CA.
+ */
 async function postRegisterStudent(req, res, next) {
     try {
 
         const { name, email, password, passwordConfirm } = req.body;
 
+        // 1. Give the student a cryptographic identity on the local Blockchain Wallet container
         let keys = await fabricEnrollment.registerUser(req.body.email);
 
+        // 2. Store their profile details in MongoDB 
         let dbResponse = await students.create({
             name: req.body.name,
             email: req.body.email,
@@ -27,6 +45,7 @@ async function postRegisterStudent(req, res, next) {
             publicKey: keys.publicKey
         });
 
+        // 3. Keep an unchangeable audit trail of this event
         await AuditLog.create({
             action: 'registration',
             performedBy: req.body.email,
@@ -34,9 +53,10 @@ async function postRegisterStudent(req, res, next) {
             ipAddress: req.ip
         });
 
-        // Email notification
+        // 4. Send a Welcome Email
         emailService.notifyRegistration(req.body.email, req.body.name, 'student');
 
+        // 5. Render success UI to user
         res.render("register-success", {
             title, root,
             logInType: req.session.user_type || "none"
@@ -46,6 +66,7 @@ async function postRegisterStudent(req, res, next) {
         logger.error(e);
         const errorString = e.message || e.toString();
 
+        // MongoDB throws E11000 if a unique index (like Email) is violated.
         if (e.code === 11000 || errorString.includes('already exists') || errorString.includes('already registered')) {
             return res.render("register-student", {
                 title, root,
@@ -58,24 +79,33 @@ async function postRegisterStudent(req, res, next) {
     }
 }
 
+/*
+ * ===== FUNCTION: logOutAndRedirect =====
+ * WHAT: Destroys the Express session cookie.
+ */
 async function logOutAndRedirect(req, res, next) {
     req.session.destroy(function () {
         res.redirect('/');
     });
 };
 
-
+/*
+ * ===== FUNCTION: postLoginStudent =====
+ * WHAT: Authenticates a student, regenerates their session to prevent fixation 
+ *   attacks, and ensures their cryptographic wallet is ready for blockchain actions.
+ */
 async function postLoginStudent(req, res, next) {
     try {
+        // 1. Password hash comparison inside Mongoose
         let studentObject = await students.validateByCredentials(req.body.email, req.body.password)
 
-        // Prevent Session Fixation (OWASP Cheat Sheet)
+        // 2. SECURITY PATTERN - Prevent Session Fixation 
+        // We delete the old cookie and give them a totally new one upon login.
         await new Promise((resolve, reject) => {
             req.session.regenerate((err) => {
                 if (err) reject(err);
 
                 // Re-create the CSRF token for the new session 
-                // to prevent "Forbidden" error if the login result needs to render again (e.g., catching errors later)
                 const crypto = require('crypto');
                 req.session.csrfToken = crypto.randomBytes(32).toString('hex');
                 res.locals.csrfToken = req.session.csrfToken;
@@ -84,11 +114,17 @@ async function postLoginStudent(req, res, next) {
             });
         });
 
+        // 3. Hydrate session state needed later
         req.session.user_id = studentObject._id;
         req.session.user_type = "student";
         req.session.email = studentObject.email;
         req.session.name = studentObject.name;
         req.session.publicKey = studentObject.publicKey;
+
+        // 4. Self-healing mechanism: If their internal crypto wallet was deleted 
+        // (common in Docker restarts), we detect the missing `.id` file and recreate it 
+        // using their `publicKey` stored in MongoDB.
+        await identityHelper.ensureIdentity(studentObject.email);
 
         await AuditLog.create({
             action: 'login',
@@ -108,9 +144,16 @@ async function postLoginStudent(req, res, next) {
     }
 }
 
-
+/*
+ * ===== FUNCTION: getDashboard =====
+ * WHAT: Fetches certificates belonging to the student and loads the UI.
+ */
 async function getDashboard(req, res, next) {
     try {
+        // Double check wallet health
+        await identityHelper.ensureIdentity(req.session.email);
+
+        // This service merges MongoDB visible data with Fabric chaincode cryptographic data
         let certData = await studentService.getCertificateDataforDashboard(req.session.publicKey, req.session.email);
         res.render("dashboard-student", {
             title, root, certData,
@@ -124,8 +167,11 @@ async function getDashboard(req, res, next) {
 }
 
 
-
-
+/*
+ * ===== FUNCTION: postRequestTranscript =====
+ * WHAT: An added feature where students can ping their University asking for 
+ *   physical transcripts via internal system emails.
+ */
 async function postRequestTranscript(req, res, next) {
     try {
         const { certId, note } = req.body;
@@ -138,14 +184,15 @@ async function postRequestTranscript(req, res, next) {
             throw new Error("Certificate not found");
         }
 
-        // IDOR Fix: Ensure student owns the certificate they are requesting a transcript for.
+        // SECURITY (IDOR Fix): Ensure student owns the certificate they are requesting a transcript for.
         if (cert.studentEmail !== req.session.email) {
             throw new Error("Unauthorized: You do not own this certificate.");
         }
 
+        // Uses Nodemailer to fire an email to the university staff
         await emailService.notifyTranscriptRequest(cert.universityEmail, studentName, certId, note);
 
-        // Flash message handling would be ideal here, but for now redirecting with query param
+        // Flash message handling via query param
         res.redirect('/student/dashboard?message=Transcript%20Requested');
 
     } catch (e) {
@@ -154,62 +201,29 @@ async function postRequestTranscript(req, res, next) {
     }
 }
 
+/*
+ * ===== FUNCTION: getVerificationHistory =====
+ * WHAT: Shows the student who has been verifying their certificates.
+ * WHY: Gives users control over their data privacy by letting them see whenever
+ *   an Employer or Background Agency checks their background.
+ */
 async function getVerificationHistory(req, res, next) {
     try {
         const studentEmail = req.session.email;
 
-        // 1. Get all certificate UUIDs for this student
+        // 1. Get all certificates for this student
         const studentCerts = await certificates.find({ studentEmail: studentEmail }).select('_id');
+        // Convert MongoDB ObjectId to string to match the AuditLog schema `targetCertId`
         const certUUIDs = studentCerts.map(c => c._id.toString());
-        // Checking certificates.js schema... it doesn't explicitly define 'certUUID'. 
-        // Wait! certificates.js schema (Step 2238) does NOT have certUUID!
-        // It has rollNumber, studentName, etc.
-        // Browse dashboard-uni (Step 2089) uses 'certData[i].certUUID'.
-        // University Controller (Step 2073) uses 'certUUID' in 'postIssueCertificate'.
-        // Let's re-verify certificates.js schema.
-
-        // View Step 2238:
-        // Schema does NOT have certUUID!
-        // But dashboard uses it.
-        // Maybe it's implicitly added or I missed it?
-        // Let's check 'postIssueCertificate' in university-controller.js
-
-        // I'll assume for now I need to check where UUID is stored.
-        // If it's not in Mongoose schema, I can't query it easily?
-        // Wait, issue function saves to Blockchain AND MongoDB.
-        // If MongoDB schema doesn't have it, it's not saved there?
-
-        // Let's check university-controller.js to see how it saves to DB.
-
-        // For now, I'll write the function assuming certUUID field exists or I need to add it.
-        // BUT if I can't find it, I can't query audit logs by it.
-        // Actually, let's look at auditlog schema (Step 2237). It has 'targetCertId'.
-
-        // If certificates.js is missing certUUID, then we have a problem.
-        // Let's pause and check university-controller.js in next step if needed.
-        // But `postIssueCertificate` usually saves it so it MUST be there.
-        // I will assume it is `certUUID` based on views use.
-
-        // WAIT! I see `view_file` output Step 2238.
-        // It ends at line 94.
-        // Fields: rollNumber ... dateOfIssuing ... revoked ...
-        // It DOES NOT show `certUUID`.
-
-        // This is critical. If `certUUID` is not in the schema, it won't be saved in MongoDB (strict mode).
-        // But dashboard-university.ejs displays it `<%= certData[i].certUUID %>`.
-        // Where does `certData` come from?
-        // `getDashboard` in `university-controller` calls `certificates.find`.
-
-        // Maybe I missed it in `view_file`.
-        // I will double check `certificates.js` again properly.
-
-        // Assuming it's there for now to proceed with coding, but I'll verifying it.
-
+        
+        // 2. Query Audit Log collection where the Action is a verification attempt 
+        // AND the target was one of THIS student's certificates.
         const history = await AuditLog.find({
             action: { $in: ['certificate_verified', 'proof_verified'] },
             targetCertId: { $in: certUUIDs }
-        }).sort({ timestamp: -1 });
+        }).sort({ timestamp: -1 }); // Sort by newest first
 
+        // Render the UI view with the history arrays
         res.render('student-history', {
             title: "Verification History",
             root,
@@ -222,11 +236,14 @@ async function getVerificationHistory(req, res, next) {
     }
 }
 
-// Download certificate as PDF check ownership
+/*
+ * ===== FUNCTION: downloadCertificatePDF =====
+ * WHAT: Dynamically generates a PDF containing the student's degree data and 
+ *   a QR code for verification, and streams it to the user's browser.
+ */
 async function downloadCertificatePDF(req, res, next) {
     try {
         let certId = req.params.certId;
-
 
         let cert = await certificates.findById(certId);
         if (!cert) {
@@ -234,18 +251,15 @@ async function downloadCertificatePDF(req, res, next) {
             return res.status(404).send('Certificate not found');
         }
 
-
-        // Check ownership
+        // SECURITY (IDOR Fix): Only the owner can download it.
         const certEmail = cert.studentEmail ? cert.studentEmail.toLowerCase() : '';
         const sessionEmail = req.session.email ? req.session.email.toLowerCase() : '';
 
-
-
         if (certEmail !== sessionEmail) {
-
             return res.status(403).send('Unauthorized: You do not own this certificate.');
         }
 
+        // PDFKit stream generation happens in this service block
         let pdfBuffer = await pdfGenerator.generateCertificatePDF({
             studentName: cert.studentName,
             major: cert.major,
@@ -257,6 +271,7 @@ async function downloadCertificatePDF(req, res, next) {
             certUUID: cert._id.toString()
         });
 
+        // Set headers so the browser triggers a File Download instead of loading HTML
         res.set({
             'Content-Type': 'application/pdf',
             'Content-Disposition': `attachment; filename="certificate-${cert.rollNumber}.pdf"`,

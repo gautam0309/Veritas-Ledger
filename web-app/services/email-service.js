@@ -1,3 +1,22 @@
+/*
+ * ============================================================================
+ * FILE: web-app/services/email-service.js
+ * ============================================================================
+ * 
+ * PURPOSE:
+ *   Handles sending outbound HTML email notifications to users.
+ *   Used for notifying students when certificates are issued or revoked,
+ *   confirming account registrations, and notifying universities about
+ *   transcript requests.
+ *
+ * HOW IT WORKS:
+ *   - Uses the 'nodemailer' library.
+ *   - Connects to an external SMTP server (like Gmail, Sendgrid, or Mailgun).
+ *   - If no SMTP credentials are provided in the .env file, it fails gracefully
+ *     and just prints the email payload to the server logs.
+ * ============================================================================
+ */
+
 const nodemailer = require('nodemailer');
 const logger = require('./logger');
 
@@ -6,12 +25,16 @@ const logger = require('./logger');
 // If not configured, emails will be logged but not sent
 let transporter = null;
 
+/*
+ * ===== FUNCTION: initializeTransporter =====
+ * WHAT: Boots up the nodemailer connection instance using credentials from .env.
+ */
 function initializeTransporter() {
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: process.env.SMTP_PORT || 587,
-            secure: process.env.SMTP_SECURE === 'true',
+            secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
@@ -29,6 +52,14 @@ initializeTransporter();
 /**
  * Simple HTML escape function to prevent injection
  */
+
+/*
+ * ===== FUNCTION: escapeHTML =====
+ * WHAT: Sanitizes user input before placing it inside an HTML email.
+ * WHY SECURITY: Prevents Cross-Site Scripting (XSS) in email clients. If a malicious 
+ *   user registers their name as `<script>stealCookie()</script>`, this function turns it 
+ *   into harmless text `&lt;script&gt;stealCookie()&lt;/script&gt;` so the email app won't execute it.
+ */
 function escapeHTML(str) {
     if (!str) return "";
     return String(str)
@@ -45,9 +76,15 @@ function escapeHTML(str) {
  * @param {string} subject - Email subject
  * @param {string} html - HTML body content
  */
+
+/*
+ * ===== FUNCTION: sendEmail =====
+ * WHAT: The core utility wrapper around nodemailer's sendMail function.
+ */
 async function sendEmail(to, subject, html) {
     try {
         if (transporter) {
+            // Send it over the network
             await transporter.sendMail({
                 from: process.env.SMTP_FROM || '"Veritas Ledger" <noreply@veritas-ledger.com>',
                 to,
@@ -56,9 +93,13 @@ async function sendEmail(to, subject, html) {
             });
             logger.info(`Email sent to ${to}: ${subject}`);
         } else {
+            // Development fallback: Print to console instead of sending
             logger.info(`[EMAIL LOG] To: ${to} | Subject: ${subject}`);
         }
     } catch (err) {
+        // We don't throw the error, we catch it and log it.
+        // WHY: We don't want the entire certificate issuance process to fail and crash
+        //   just because an email bounced or the SMTP server was temporarily down.
         logger.error(`Failed to send email to ${to}: ${err.message}`);
     }
 }
@@ -68,6 +109,8 @@ async function sendEmail(to, subject, html) {
  */
 async function notifyCertificateIssued(studentEmail, studentName, universityName, major) {
     const subject = `New Certificate Issued - ${universityName}`;
+    
+    // Always escape dynamic data before interpolating into HTML
     const eStudentName = escapeHTML(studentName);
     const eUniversityName = escapeHTML(universityName);
     const eMajor = escapeHTML(major);
@@ -154,6 +197,7 @@ async function notifyTranscriptRequest(universityEmail, studentName, certUUID, n
     await sendEmail(universityEmail, subject, html);
 }
 
+// Export the functions for controllers to use
 module.exports = {
     sendEmail,
     notifyCertificateIssued,

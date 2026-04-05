@@ -44,3 +44,5 @@ fabricate_history.py
 .project-version
 .git.bak/
 *.csv
+.agent/
+cookies.txt

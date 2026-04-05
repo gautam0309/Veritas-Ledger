@@ -12,7 +12,6 @@
     "lint:security": "eslint . --ext .js"
   },
   "dependencies": {
-    "app-root-path": "^3.0.0",
     "bcryptjs": "^2.4.3",
     "connect-mongo": "^3.2.0",
     "cookie-parser": "~1.4.4",
@@ -32,11 +31,9 @@
     "jsrsasign": "latest",
     "merkletreejs": "^0.6.0",
     "moment": "^2.27.0",
-    "mongo-sanitize": "^1.1.0",
     "mongoose": "^5.9.7",
     "morgan": "~1.9.1",
     "multer": "^2.0.2",
-    "node-cache": "^5.1.2",
     "nodemailer": "^8.0.1",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",

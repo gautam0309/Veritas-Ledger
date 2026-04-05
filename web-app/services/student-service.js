@@ -1,3 +1,13 @@
+/*
+ * ============================================================================
+ * FILE: web-app/services/student-service.js
+ * ============================================================================
+ * 
+ * PURPOSE:
+ *   Handles business logic specific to Students.
+ *   Currently, students only need to view the certificates issued to them.
+ * ============================================================================
+ */
 
 const certificates = require('../database/models/certificates');
 const students = require('../database/models/students');
@@ -6,108 +16,33 @@ const logger = require("./logger");
 const encryption = require('./encryption');
 const certificateService = require('./certificate-service');
 
-
-
-
+/*
+ * ===== FUNCTION: getCertificateDataforDashboard =====
+ * WHAT: Loads the student dashboard. Fetches all certificates owned by this student.
+ * 
+ * HOW: Similar to the University version, it uses a two-phase query.
+ *   1. Fetch the trusted index (list of UUIDs) from the blockchain.
+ *   2. Fetch the display data (names, dates, graphics) from MongoDB.
+ *   3. Merge them together so the UI has everything it needs.
+ */
 async function getCertificateDataforDashboard(studentPublicKey, studentEmail) {
-
-
+    
+    // 1. Fetch certificate UUIDs from Ledger using the student's Public Key.
+    // isQuery = true (fast read, no consensus required)
     let certLedgerDataArray = await chaincode.invokeChaincode("getAllCertificateByStudent",
         [studentPublicKey], true, studentEmail);
 
+    // 2. Map through the Fabric response to build an array of just the string UUIDs
     let certUUIDArray = certLedgerDataArray.map( element => {
         return element.certUUID
     });
 
+    // 3. Search MongoDB for any certificate documents whose `_id` matches the array.
+    // The `.exec()` turns the Mongoose query chain into an actual Promise we can await.
     let certDBRecords = await certificates.find().where('_id').in(certUUIDArray).exec();
 
+    // 4. Send both lists to the helper service to glue the state together.
     return certificateService.mergeCertificateData(certDBRecords, certLedgerDataArray);
 }
 
-
 module.exports = {getCertificateDataforDashboard}
-/* minor update: 2026-02-21 17:22:41 */
-
-/* minor update: 2026-02-21 09:28:16 */
-
-/* minor update: 2026-02-21 12:23:04 */
-
-/* minor update: 2026-02-21 16:34:52 */
-
-/* minor update: 2026-02-21 17:37:34 */
-
-/* minor update: 2026-02-21 17:19:41 */
-
-/* minor update: 2026-02-21 09:03:44 */
-
-/* minor update: 2026-02-22 09:21:08 */
-
-/* minor update: 2026-02-22 14:54:36 */
-
-/* minor update: 2026-02-23 11:32:52 */
-
-/* minor update: 2026-02-23 18:06:06 */
-
-/* minor update: 2026-02-23 14:19:36 */
-
-/* minor update: 2026-02-23 10:04:18 */
-
-/* minor update: 2026-02-23 11:12:49 */
-
-/* minor update: 2026-02-23 11:59:21 */
-
-/* minor update: 2026-02-23 18:38:24 */
-
-/* minor update: 2026-02-23 09:19:33 */
-
-/* minor update: 2026-02-23 12:12:37 */
-
-/* minor update: 2026-02-25 16:58:25 */
-
-/* minor update: 2026-02-25 14:51:28 */
-
-/* minor update: 2026-02-25 14:30:13 */
-
-/* minor update: 2026-02-25 14:37:22 */
-
-/* minor update: 2026-02-25 12:44:24 */
-
-/* minor update: 2026-02-25 13:56:34 */
-
-/* minor update: 2026-02-25 17:07:11 */
-
-/* minor update: 2026-03-01 12:26:15 */
-
-/* minor update: 2026-03-01 14:22:28 */
-
-/* minor update: 2026-03-02 16:44:51 */
-
-/* minor update: 2026-03-02 13:32:56 */
-
-/* minor update: 2026-03-02 12:51:28 */
-
-/* minor update: 2026-03-02 13:10:06 */
-
-/* minor update: 2026-03-04 15:40:21 */
-
-/* minor update: 2026-03-04 15:02:55 */
-
-/* minor update: 2026-03-04 16:35:14 */
-
-/* minor update: 2026-03-04 13:31:55 */
-
-/* minor update: 2026-03-04 17:56:53 */
-
-/* minor update: 2026-03-04 15:55:51 */
-
-/* minor update: 2026-03-04 12:26:27 */
-
-/* minor update: 2026-03-05 09:52:33 */
-
-/* minor update: 2026-03-05 09:59:59 */
-
-/* minor update: 2026-03-05 09:25:56 */
-
-/* minor update: 2026-03-05 16:10:57 */
-
-/* minor update: 2026-03-06 10:45:58 */

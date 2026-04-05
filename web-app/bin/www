@@ -1,45 +1,128 @@
 #!/usr/bin/env node
+// ↑ SHEBANG LINE: Tells Linux/macOS "run this file with Node.js"
+// Without it, you'd have to type `node bin/www` instead of just `./bin/www`
+// On Windows, this line is harmless — it's treated as a comment.
+
+/*
+ * ============================================================================
+ * FILE: web-app/bin/www
+ * ============================================================================
+ * 
+ * PURPOSE:
+ *   This is the SERVER ENTRY POINT — the file that actually starts the
+ *   HTTP server and begins listening for incoming web requests.
+ *   When you run `npm start` or `npm run dev`, THIS is the file that executes.
+ *
+ * HOW IT CONNECTS:
+ *   - package.json points to this file: "start": "node ./bin/www"
+ *   - It imports app.js (which has all Express routes/middleware configured)
+ *   - It creates an HTTP server, binds the Express app to it, and listens
+ *
+ * EXECUTION ORDER:
+ *   1. npm start → runs `node ./bin/www`
+ *   2. www requires app.js → app.js requires all loaders, routes, middleware
+ *   3. www creates HTTP server with the configured app
+ *   4. www starts listening on port 4000
+ *   5. Server is now ready to accept browser requests
+ * ============================================================================
+ */
 
 /**
  * Module dependencies.
  */
 
+// WHAT: Import the configured Express application from app.js
+// WHY: The `app` object has ALL routes and middleware already set up.
+//   We just need to attach it to an HTTP server and start listening.
+// CONCEPT — var vs const/let:
+//   This uses `var` (older JS style). Modern code would use `const`.
+//   `var` is function-scoped and hoisted; `const`/`let` are block-scoped.
+//   Both work here — this was written before const/let became standard.
 var app = require('../app');
+
+// WHAT: Import Node.js's built-in HTTP module
+// WHY: Creates the actual TCP/HTTP server that listens for connections.
+//   Express is NOT a server — it's a request handler. We need http.createServer()
+//   to create the server and pass Express as the handler.
 var http = require('http');
+
+// WHAT: Import our custom Winston logger
+// WHY: Used at the bottom to log which port the server is listening on
 const logger = require("../services/logger");
+
 /**
  * Get port from environment and store in Express.
  */
 
+// WHAT: Get the port number from environment variable, default to 3000
+// WHY: The .env file sets PORT=4000. If not set, falls back to 3000.
+// CONCEPT — normalizePort():
+//   Converts the port value to a number, handles edge cases (named pipes, invalid values)
 var port = normalizePort(process.env.PORT || '3000');
+
+// WHAT: Store the port in Express's settings (accessible later via app.get('port'))
+// WHY: Express convention — allows other parts of the app to know the port
 app.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
+// WHAT: Create an HTTP server with the Express app as the request handler
+// CONCEPT — http.createServer(app):
+//   The server receives raw TCP connections. For each connection, it parses
+//   the HTTP request and passes it to `app` (Express). Express processes it
+//   through middleware/routes and sends back a response.
+// WHY NOT just app.listen()? Using http.createServer gives us more control
+//   over the server object (timeouts, events, etc.)
 var server = http.createServer(app);
 
+// WHAT: Set server timeouts for long-running operations
+// WHY: Certificate issuance involves multiple blockchain operations that can
+//   take several minutes. Default Node.js timeout (2 min) would kill these requests.
 // Increase timeout for long-running batch operations (10 minutes)
-server.timeout = 600000;
-server.keepAliveTimeout = 610000;
-server.headersTimeout = 620000;
+server.timeout = 600000;       // 10 minutes — max time for a single request
+server.keepAliveTimeout = 610000; // 10 min 10 sec — how long to keep idle connections alive
+server.headersTimeout = 620000;   // 10 min 20 sec — max time to receive complete HTTP headers
 
 /**
  * Listen on provided port, on all network interfaces.
  */
 
+// WHAT: Start the server — begin accepting incoming HTTP connections
+// WHY: Until this line runs, the server exists but isn't listening.
+//   After this, visiting http://localhost:4000 will reach the server.
 server.listen(port);
+
+// WHAT: Register error handler for server-level errors
+// WHY: Handles fatal errors like port-already-in-use or permission denied
 server.on('error', onError);
+
+// WHAT: Register handler for when server starts listening successfully
+// WHY: Logs "Listening on port 4000" to confirm the server is ready
 server.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.
  */
 
+// WHAT: Converts a port value to a number, or handles named pipes
+// WHY: Port can be a number ("4000") or a named pipe (Linux socket path).
+//   This function handles both cases gracefully.
+// CONCEPT — function declaration vs arrow function:
+//   `function normalizePort(val)` is a traditional function declaration.
+//   It's "hoisted" — can be called before the line it's defined on.
+//   Arrow functions (`const fn = () => {}`) are NOT hoisted.
 function normalizePort(val) {
+  // CONCEPT — parseInt(string, radix):
+  //   Converts a string to an integer. Radix 10 = decimal number system.
+  //   parseInt("4000", 10) → 4000 (number)
+  //   parseInt("abc", 10) → NaN (Not a Number)
   var port = parseInt(val, 10);
 
+  // CONCEPT — isNaN():
+  //   isNaN(value) returns true if the value is "Not a Number".
+  //   If parseInt fails (non-numeric string), the port is a named pipe.
   if (isNaN(port)) {
     // named pipe
     return val;
@@ -57,22 +140,36 @@ function normalizePort(val) {
  * Event listener for HTTP server "error" event.
  */
 
+// WHAT: Handles errors that occur when the server tries to start
+// WHY: Provides human-readable error messages for common problems
 function onError(error) {
+  // Only handle 'listen' errors (errors during server.listen())
   if (error.syscall !== 'listen') {
     throw error;
   }
 
+  // CONCEPT — typeof operator:
+  //   Returns a string indicating the type: "string", "number", "object", etc.
+  //   Used here to format the error message differently for pipes vs ports.
+  // CONCEPT — Ternary Operator (condition ? a : b):
+  //   Compact if/else. If port is a string → "Pipe X", if number → "Port X"
   var bind = typeof port === 'string'
     ? 'Pipe ' + port
     : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
+  // CONCEPT — switch statement:
+  //   Like multiple if/else-if blocks. Checks error.code against known values.
   switch (error.code) {
     case 'EACCES':
+      // WHAT: Permission denied — port requires root/admin privileges (e.g., port 80)
+      // FIX: Use a port > 1024 or run with sudo
       console.error(bind + ' requires elevated privileges');
-      process.exit(1);
+      process.exit(1);  // Exit with error code 1
       break;
     case 'EADDRINUSE':
+      // WHAT: Port is already being used by another process
+      // FIX: Kill the other process or use a different port
       console.error(bind + ' is already in use');
       process.exit(1);
       break;
@@ -85,10 +182,15 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
+// WHAT: Called when the server successfully starts listening
+// WHY: Logs the port/pipe so developers know the server is ready
 function onListening() {
+  // WHAT: Get the address the server is listening on
+  // RETURNS: {address: '::', family: 'IPv6', port: 4000} or a string (for pipes)
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
+  // Log using our Winston logger instead of console.log
   logger.debug('Listening on ' + bind);
 }
