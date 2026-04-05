@@ -52,7 +52,13 @@ async function ensureIdentity(email) {
         
         // Attempt to re-register/re-enroll the user automatically against the CA
         try {
-            await fabricEnrollment.registerUser(email);
+            const registrationResult = await fabricEnrollment.registerUser(email);
+            
+            // Circuit Breaker: If Fabric is unreachable, allow login but in "Limited Mode"
+            if (registrationResult && registrationResult.fabricOffline) {
+                logger.warn(`Fabric CA Offline during self-healing for ${email}. Allowing login in Limited Mode.`);
+                return true; 
+            }
         } catch (regError) {
             // Identity removal is often disabled in production/v1.4 CA setups.
             // If it exists in CA but we have no wallet, we are stuck for this ID 

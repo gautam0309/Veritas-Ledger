@@ -28,9 +28,13 @@ const certificateService = require('./certificate-service');
 async function getCertificateDataforDashboard(studentPublicKey, studentEmail) {
     
     // 1. Fetch certificate UUIDs from Ledger using the student's Public Key.
-    // isQuery = true (fast read, no consensus required)
     let certLedgerDataArray = await chaincode.invokeChaincode("getAllCertificateByStudent",
         [studentPublicKey], true, studentEmail);
+
+    // Category 4 Fix: Handle Offline Fabric Circuit Breaker
+    if (certLedgerDataArray && certLedgerDataArray.fabricOffline) {
+        return { fabricOffline: true };
+    }
 
     // 2. Map through the Fabric response to build an array of just the string UUIDs
     let certUUIDArray = certLedgerDataArray.map( element => {
@@ -38,7 +42,6 @@ async function getCertificateDataforDashboard(studentPublicKey, studentEmail) {
     });
 
     // 3. Search MongoDB for any certificate documents whose `_id` matches the array.
-    // The `.exec()` turns the Mongoose query chain into an actual Promise we can await.
     let certDBRecords = await certificates.find().where('_id').in(certUUIDArray).exec();
 
     // 4. Send both lists to the helper service to glue the state together.

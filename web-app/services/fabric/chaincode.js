@@ -192,6 +192,21 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
             return invokeChaincode(func, args, isQuery, userEmail, retryCount + 1);
         }
 
+        // Category 4 Fix: Circuit Breaker for Offline Fabric
+        // WHAT: Detect if the error is a connection failure (e.g., Docker down, incorrect Ngrok URL)
+        const isConnectionError = error.message && (
+            error.message.includes('Connect Failed') || 
+            error.message.includes('No peers found') ||
+            error.message.includes('failed to connect') ||
+            error.message.includes('DiscoveryService') ||
+            error.message.includes('ECONNREFUSED')
+        );
+
+        if (isConnectionError) {
+            logger.error(`FABRIC OFFLINE: Blockchain network unreachable. Returning offline status.`);
+            return { fabricOffline: true, error: error.message };
+        }
+
         logger.error(`Failed to submit transaction: ${error.message || error}`);
         throw error;
     }

@@ -195,8 +195,6 @@ async function logOutAndRedirect(req, res, next) {
 /*
  * ===== FUNCTION: postIssueCertificate =====
  * WHAT: Issues a single certificate. 
- * WHY IS THIS COMPLEX? Because it has to save data to MongoDB, run cryptographic Merkle Tree
- *   computations, save the Hashes to the Hyperledger Fabric chaincode, AND upload an image.
  */
 async function postIssueCertificate(req, res, next) {
     try {
@@ -216,7 +214,6 @@ async function postIssueCertificate(req, res, next) {
             certData.expiryDate = req.body.expiryDate;
         }
 
-        // If the Express-Multer middleware found a file in the form, attach the new file path
         if (req.file) {
             certData.certificateImage = '/uploads/' + req.file.filename;
         }
@@ -224,11 +221,21 @@ async function postIssueCertificate(req, res, next) {
         // Send to our massive abstraction layer that handles the math and blockchain connections
         let serviceResponse = await universityService.issueCertificate(certData);
 
+        // Category 4 Fix: Handle Offline Fabric Circuit Breaker
+        if (serviceResponse && serviceResponse.fabricOffline) {
+            return res.render("issue-university", {
+                title, root,
+                logInType: req.session.user_type || "none",
+                fabricOffline: true,
+                errorMessage: "Fabric Blockchain is currently offline. Verification remains available for already issued certificates, but new issuance is temporarily disabled."
+            });
+        }
+
         // Security logging
         await AuditLog.create({
             action: 'certificate_issued',
             performedBy: req.session.email,
-            targetCertId: serviceResponse.certId || '', // The MongoDB Object _id
+            targetCertId: serviceResponse.certId || '', 
             details: `Certificate issued to ${req.body.studentName} (${req.body.studentEmail})`,
             ipAddress: req.ip
         });
@@ -247,7 +254,6 @@ async function postIssueCertificate(req, res, next) {
         logger.error(e);
         let errorMsg = e.message || "An unexpected error occurred.";
         
-        // Custom friendlier error formatting for known edge cases
         if (errorMsg.includes("student profile")) {
             errorMsg = "Student with this email is not registered. The student must register on the platform first before a certificate can be issued.";
         }
@@ -271,8 +277,13 @@ async function getDashboard(req, res, next) {
         await identityHelper.ensureIdentity(req.session.email);
 
         let certData = await universityService.getCertificateDataforDashboard(req.session.name, req.session.email);
+        
+        // Category 4 Fix: Check if data was returned but with an offline flag
+        const fabricOffline = certData && certData.fabricOffline;
+
         res.render("dashboard-university", {
-            title, root, certData,
+            title, root, certData: fabricOffline ? [] : certData,
+            fabricOffline,
             logInType: req.session.user_type || "none"
         });
 

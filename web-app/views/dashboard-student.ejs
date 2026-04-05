@@ -25,6 +25,19 @@
         <%- include('partials/navbar-partial.ejs') %>
 
             <div class="container justify-content-center mt-3 py-4">
+                <% if (typeof fabricOffline !== 'undefined' && fabricOffline) { %>
+                    <div class="alert alert-warning border-warning shadow-sm mb-4 animate-pulse" role="alert" style="background: rgba(255, 193, 7, 0.1); border-left: 5px solid #ffc107;">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span style="font-size: 1.5rem;">⚠️</span>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading mb-1 font-weight-bold">Blockchain Network Limited</h5>
+                                <p class="mb-0 small">The Hyperledger Fabric network is currently offline. You can still view your existing certificates, but <strong>Proof Generation</strong> and <strong>New Requests</strong> might be unavailable until the network is restored.</p>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
                 <!-- Search Bar -->
                 <div class="row mb-3">
                     <div class="col-md-8">

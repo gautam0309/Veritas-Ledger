@@ -81,8 +81,8 @@ async function enrollAdmin() {
         logger.info('Successfully enrolled admin user "admin" and imported it into the wallet.');
         return adminKeys;
     } catch (error) {
-        logger.error(`Failed to enroll admin user "admin": ${error}`);
-        process.exit(1);
+        logger.error(`Failed to enroll admin user "admin": ${error.message || error}`);
+        // Category 4 Fix: Don't exit process, allow the web app to run in "Limited Mode"
     }
 }
 
@@ -160,7 +160,21 @@ async function registerUser(email) {
         return userKeys;
 
     } catch (error) {
-        logger.error(`Failed to register user ${email}": ${error}`);
+        // Category 4 Fix: Circuit Breaker for Offline Fabric CA
+        // WHAT: Detect if the error is a connection failure (e.g., CA Docker container down)
+        const isConnectionError = error.message && (
+            error.message.includes('Connect Failed') || 
+            error.message.includes('ECONNREFUSED') ||
+            error.message.includes('failed to connect') ||
+            error.message.includes('DiscoveryService')
+        );
+
+        if (isConnectionError) {
+            logger.error(`FABRIC CA OFFLINE: Certificate Authority unreachable. Returning offline status.`);
+            return { fabricOffline: true, error: error.message };
+        }
+
+        logger.error(`Failed to register user ${email}": ${error.message || error}`);
         throw error;
     }
 }

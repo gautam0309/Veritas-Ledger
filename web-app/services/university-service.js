@@ -75,11 +75,12 @@ async function issueCertificate(certData) {
     let studentSignature = await encryption.createDigitalSignature(mTreeHash, certData.studentEmail);
 
     // 5. Blockchain Step: Write to Ledger
-    // WHAT: Call the "issueCertificate" Smart Contract function inside Fabric.
-    // Arguments: Hash, signatures, date, the mongoose object ID, and the public keys.
-    // isQuery = false, because we are adding a NEW block to the ledger.
     let chaincodeResult = await chaincode.invokeChaincode("issueCertificate",
         [mTreeHash, universitySignature, studentSignature, certData.dateOfIssuing, certDBModel._id.toString(), universityObj.publicKey, studentObj.publicKey], false, certData.universityEmail);
+
+    if (chaincodeResult && chaincodeResult.fabricOffline) {
+        return { fabricOffline: true };
+    }
 
     logger.debug(chaincodeResult);
 
@@ -123,9 +124,18 @@ async function getCertificateDataforDashboard(universityName, universtiyEmail) {
     let universityProfile = await chaincode.invokeChaincode("queryUniversityProfileByName",
         [universityName], true, universtiyEmail);
 
+    // Category 4 Fix: Handle Offline Fabric Circuit Breaker
+    if (universityProfile && universityProfile.fabricOffline) {
+        return { fabricOffline: true };
+    }
+
     // 2. Fetch all certificate hashes owned by that public key from Fabric
     let certLedgerDataArray = await chaincode.invokeChaincode("getAllCertificateByUniversity",
         [universityProfile.publicKey], true, universtiyEmail);
+
+    if (certLedgerDataArray && certLedgerDataArray.fabricOffline) {
+        return { fabricOffline: true };
+    }
 
     // Extract just the UUIDs into a simple array: ["uuid1", "uuid2"]
     let certUUIDArray = certLedgerDataArray.map(element => {
@@ -133,7 +143,6 @@ async function getCertificateDataforDashboard(universityName, universtiyEmail) {
     });
 
     // 3. One massive fetch from MongoDB using the `$in` operator
-    // This is much faster than running a separate DB query in a loop.
     let certDBRecords = await certificates.find().where('_id').in(certUUIDArray).exec();
 
     // 4. Merge the Blockchain state (valid/revoked) with the DB state (student name, major)

@@ -34,15 +34,11 @@
 // IF REMOVED: `env` would be undefined, and the development check below would fail.
 const env = process.env.NODE_ENV || 'development';
 
-// WHAT: If we're in development mode, use the LOCAL MongoDB URI instead of a remote one.
-// WHY: In development, MongoDB runs on localhost. In production, it would be a cloud URI.
-// CONCEPT — process.env.MONGODB_URI_LOCAL:
-//   This is set in the .env file (e.g., "mongodb://localhost:27017/educert").
-//   We copy it to MONGODB_URI so the rest of the app only checks MONGODB_URI.
-// IF REMOVED: In development, the app would try to connect to a production database URL.
-if (env === 'development') {
-    process.env.MONGODB_URI = process.env.MONGODB_URI_LOCAL;  //in case of dev, connect to local URI.
-    process.env.NODE_ENV = 'development';
+// WHAT: Determine the MongoDB connection string.
+// WHY: In production (Vercel/Heroku), we use a cloud URI like MongoDB Atlas.
+//   In development, we default to localhost if no remote URI is specified.
+if (!process.env.MONGODB_URI && env === 'development') {
+    process.env.MONGODB_URI = process.env.MONGODB_URI_LOCAL;
 }
 
 

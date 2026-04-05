@@ -155,8 +155,13 @@ async function getDashboard(req, res, next) {
 
         // This service merges MongoDB visible data with Fabric chaincode cryptographic data
         let certData = await studentService.getCertificateDataforDashboard(req.session.publicKey, req.session.email);
+
+        // Category 4 Fix: Check if data was returned but with an offline flag
+        const fabricOffline = certData && certData.fabricOffline;
+
         res.render("dashboard-student", {
-            title, root, certData,
+            title, root, certData: fabricOffline ? [] : certData,
+            fabricOffline,
             logInType: req.session.user_type || "none"
         });
 

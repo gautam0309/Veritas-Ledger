@@ -5,7 +5,7 @@ require('dotenv').config({ path: './.env' });
 
 async function debugUser(email) {
     try {
-        await mongoose.connect(process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27014/VeritasLedger');
+        await mongoose.connect(process.env.MONGODB_URI || process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27017/blockchaincertificate');
 
         console.log(`Searching for email: ${email}`);
 
