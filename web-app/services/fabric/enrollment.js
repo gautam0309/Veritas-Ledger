@@ -236,7 +236,6 @@ async function deleteUser(email) {
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        const { getEncryptedWallet } = require('./encrypted-wallet');
         const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
         const adminIdentity = await wallet.get('admin');
