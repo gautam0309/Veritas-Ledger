@@ -56,7 +56,11 @@ function csrfProtection(req, res, next) {
     // If the token is missing from the session entirely, 
     // or if the provided token doesn't match the one we stored, BLOCK THE REQUEST.
     if (!tokenFromSession || (tokenFromHeader !== tokenFromSession && tokenFromBody !== tokenFromSession)) {
-        logger.warn(`Potential CSRF attack detected. Path: ${req.path}, IP: ${req.ip}`);
+        logger.warn(`CSRF Mismatch! Path: ${req.path}`);
+        logger.debug(`- Session Token: ${tokenFromSession ? 'EXISTS' : 'MISSING'}`);
+        logger.debug(`- Body Token: ${tokenFromBody ? 'EXISTS' : 'MISSING'}`);
+        logger.debug(`- Header Token: ${tokenFromHeader ? 'EXISTS' : 'MISSING'}`);
+        
         return res.status(403).json({
             error: "Forbidden",
             message: "Missing or invalid CSRF token. Please refresh the page and try again."
@@ -85,11 +89,13 @@ function generateCsrfToken(req, res, next) {
     // WHAT: Commit the session to the database
     // WHY: In Vercel (serverless), we need to ensure the session is saved 
     //   BEFORE the request completes, otherwise the token may be lost.
-    req.session.save();
-
-    // Makes the token available to the EJS template engine
-    res.locals.csrfToken = req.session.csrfToken;
-    next();
+    req.session.save((err) => {
+        if (err) logger.error(`Session Save Error: ${err.message}`);
+        
+        // Makes the token available to the EJS template engine
+        res.locals.csrfToken = req.session.csrfToken;
+        next();
+    });
 }
 
 /**
@@ -105,19 +111,8 @@ function generateCsrfToken(req, res, next) {
  *   will notice the User-Agent changed mid-session and instantly log them out.
  */
 function bindSessionToClient(req, res, next) {
-    const userAgent = req.get('User-Agent');
-
-    // Store the browser type on their first visit
-    if (!req.session.userAgent) {
-        req.session.userAgent = userAgent;
-    } else if (req.session.userAgent !== userAgent) {
-        // Attack detected: The session cookie changed browsers!
-        logger.warn(`Session hijack attempt? User-Agent mismatch. Session: ${req.session.userAgent}, Request: ${userAgent}`);
-        // Log out the user if the browser suddenly changes mid-session
-        req.session.destroy();
-        return res.redirect('/university/login?error=session_expired');
-    }
-
+    // DISABLED for Vercel stability: 
+    // User-Agent can change unexpectedly between Edge nodes or due to proxy headers.
     next();
 }
 
