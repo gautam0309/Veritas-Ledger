@@ -137,6 +137,11 @@ let verifyRouter = require('./routes/verify-router');   // /verify/* (certificat
 //   The app has methods like .use(), .get(), .post(), .set(), .listen()
 let app = express();
 
+// WHAT: Trust the Vercel/Reverse Proxy
+// WHY: Vercel uses a proxy. Without this, secure cookies (HTTPS) will not 
+//   be sent correctly to the browser. This fixes the CSRF "Forbidden" error.
+app.set('trust proxy', 1);
+
 // view engine setup
 // WHAT: Tell Express where to find HTML template files
 // WHY: When res.render('dashboard-student') is called, Express looks in this directory

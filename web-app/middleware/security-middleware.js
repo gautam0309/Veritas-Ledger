@@ -82,6 +82,11 @@ function generateCsrfToken(req, res, next) {
     if (!req.session.csrfToken) {
         req.session.csrfToken = crypto.randomBytes(32).toString('hex');
     }
+    // WHAT: Commit the session to the database
+    // WHY: In Vercel (serverless), we need to ensure the session is saved 
+    //   BEFORE the request completes, otherwise the token may be lost.
+    req.session.save();
+
     // Makes the token available to the EJS template engine
     res.locals.csrfToken = req.session.csrfToken;
     next();

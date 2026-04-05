@@ -70,8 +70,13 @@ let expessSessionConfig = {
     httpOnly: true,
 
     // WHAT: Don't create a session for unauthenticated visitors
-    // WHY: Prevents creating empty sessions for every page visit (saves storage)
-    saveUninitialized: false,
+    // WHY: In some serverless environments, we set this to true to ensure 
+    //   every visitor gets a session ID immediately (for CSRF to work).
+    saveUninitialized: true,
+
+    // WHAT: Trust the reverse proxy
+    // WHY: Vercel uses a proxy. When `secure: true` is used, this MUST be true.
+    proxy: true,
 
     // WHAT: Cookie configuration — controls how the session cookie behaves in browsers
     cookie: {
