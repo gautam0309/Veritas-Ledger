@@ -11,7 +11,7 @@
  * ============================================================================
  */
 
-const { Wallets } = require('fabric-network');
+// const { Wallets } = require('fabric-network');
 const config = require('../../loaders/config');
 const fs = require('fs');
 const path = require('path');

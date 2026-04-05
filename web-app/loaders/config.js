@@ -36,10 +36,12 @@ const env = process.env.NODE_ENV || 'development';
 
 // WHAT: Determine the MongoDB connection string.
 // WHY: In production (Vercel/Heroku), we use a cloud URI like MongoDB Atlas.
+//   We check for both MONGODB_URI and MONGO_URI (common in Vercel settings).
 //   In development, we default to localhost if no remote URI is specified.
-if (!process.env.MONGODB_URI && env === 'development') {
-    process.env.MONGODB_URI = process.env.MONGODB_URI_LOCAL;
+if (!process.env.MONGODB_URI && !process.env.MONGO_URI && env === 'development') {
+    process.env.MONGODB_URI = process.env.MONGODB_URI_LOCAL || "mongodb://localhost:27017/educert";
 }
+const mongodbURI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 
 // WHAT: Exports a configuration object that other files import.
@@ -51,7 +53,7 @@ if (!process.env.MONGODB_URI && env === 'development') {
 module.exports = {
     // MongoDB connection string (URI = Uniform Resource Identifier)
     // Example: "mongodb://localhost:27017/educert"
-    mongodbURI: process.env.MONGODB_URI,
+    mongodbURI: mongodbURI,
 
     // Port the web server listens on (e.g., 4000)
     port: process.env.PORT,

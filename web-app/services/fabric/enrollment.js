@@ -23,17 +23,19 @@
  */
 
 
-// WHAT: The Fabric CA Client library
-// WHY: Specific library used only for talking to the CA (different from Gateway)
-const FabricCAServices = require('fabric-ca-client');
-
-const { Wallets } = require('fabric-network');
+// WHAT: The Fabric SDK dependencies are now loaded LAZILY inside functions.
+// WHY: In cloud environments (Vercel), these modules can fail during startup.
+//   By moving them inside functions, the web app can still boot even if the Fabric
+//   SDK is unstable, allowing "Limited Mode" to work.
+// const FabricCAServices = require('fabric-ca-client');
+// const { Wallets } = require('fabric-network');
 const path = require('path');
 const config = require('../../loaders/config');
 const fs = require('fs');
 
 // Helpers for wallet management
-const walletUtils = require('./wallet-utils');
+// WHAT: Moved to lazy imports within functions.
+// const walletUtils = require('./wallet-utils');
 const logger = require('../logger');
 
 // WHAT: Helper to safely load the CCP from disk
@@ -73,6 +75,11 @@ async function enrollAdmin() {
             return { fabricOffline: true };
         }
 
+        // WHAT: Lazy load the Fabric SDK and helpers
+        const FabricCAServices = require('fabric-ca-client');
+        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const walletUtils = require('./wallet-utils');
+
         // Create a new CA client for interacting with the CA.
         // WHAT: Extracts CA connection details from the Common Connection Profile
         const caInfo = ccp.certificateAuthorities['ca.org1.example.com'];
@@ -80,8 +87,6 @@ async function enrollAdmin() {
         // Connect to the CA service (verify: false is used for self-signed development certs)
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        // Access our encrypted storage layer
-        const { getEncryptedWallet } = require('./encrypted-wallet');
         const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
         // Check if we've already done this
@@ -121,6 +126,10 @@ async function enrollAdmin() {
 async function registerUser(email) {
     try {
         // Setup CA client connection (same logic as enrollAdmin)
+        const FabricCAServices = require('fabric-ca-client');
+        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const walletUtils = require('./wallet-utils');
+
         const ccp = getSafeCCP();
         if (!ccp) {
             logger.error('Cannot register user: CCP not found.');
@@ -130,7 +139,6 @@ async function registerUser(email) {
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        const { getEncryptedWallet } = require('./encrypted-wallet');
         const wallet = await getEncryptedWallet(config.fabric.walletPath);
 
         // Check to see if we've already enrolled the user.
@@ -216,6 +224,9 @@ async function registerUser(email) {
  */
 async function deleteUser(email) {
     try {
+        const FabricCAServices = require('fabric-ca-client');
+        const { getEncryptedWallet } = require('./encrypted-wallet');
+
         const ccp = getSafeCCP();
         if (!ccp) {
             logger.error('Cannot delete user: CCP not found.');

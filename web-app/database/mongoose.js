@@ -40,14 +40,11 @@ mongoose.Promise = global.Promise;
 
 // WHAT: Establish the actual connection to the MongoDB server
 // HOW: mongoose.connect(URI, options)
-// CONCEPT — Connection Options:
-//   - useNewUrlParser: Use the new MongoDB connection string parser (fixes deprecation warnings)
-//   - useCreateIndex: Ensures .createIndexes() works correctly for unique fields (like email)
-//   - useUnifiedTopology: Use the new Server Discover and Monitoring engine (modern connection management)
-//   - autoIndex: False means "don't build indexes automatically when schemas load".
-//       WHY false? Building indexes in production can freeze the database. Best practice
-//       is to create them manually, though we call .createIndexes() explicitly in our models.
-mongoose.connect( config.mongodbURI, {
+// GUARD: Ensure the URI exists to prevent "openUri() must be a string" crash
+if (!config.mongodbURI) {
+    logger.error("MONGODB_URI or MONGO_URI is not defined in environment variables. Database connection skipped.");
+} else {
+    mongoose.connect( config.mongodbURI, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,

@@ -1,4 +1,6 @@
-const { Wallets } = require('fabric-network');
+// WHAT: The Fabric SDK dependencies are now loaded LAZILY inside functions.
+// WHY: In cloud environments (Vercel), these modules can fail during startup.
+// const { Wallets } = require('fabric-network');
 const crypto = require('crypto');
 
 /*
@@ -91,6 +93,8 @@ function decrypt(text) {
  */
 async function getEncryptedWallet(walletPath) {
     // 1. Create standard plain-text wallet
+    // WHAT: Lazy load the Fabric SDK factory
+    const { Wallets } = require('fabric-network');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     // 2. Save original read/write functions

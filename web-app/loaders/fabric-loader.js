@@ -32,7 +32,10 @@ let enrollment = require("../services/fabric/enrollment");
 // CONCEPT — Fire-and-forget:
 //   enrollAdmin() is async but we DON'T await it here.
 //   The app continues starting up while enrollment happens in the background.
-//   If enrollment fails (e.g., CA is down), the app still starts but
-//   Fabric operations will fail until the CA becomes available.
-// IF REMOVED: No admin identity → can't register users → entire platform is non-functional
-enrollment.enrollAdmin();
+//   We wrap this in a TRY-CATCH to ensure that if the Fabric SDK fails to load
+//   (common in serverless Vercel), it doesn't crash the whole server.
+try {
+    enrollment.enrollAdmin();
+} catch (err) {
+    logger.error("Hyperledger Fabric initialization failed (expected on Vercel). App will run in Limited Mode.");
+}

@@ -18,10 +18,9 @@
  * ============================================================================
  */
 
-// WHAT: Import essential classes from the Fabric SDK
-// Gateway: Manages the connection to the blockchain network
-// Wallets: (Unused here directly, handled by encrypted-wallet.js)
-const { Gateway, Wallets } = require('fabric-network');
+// WHAT: The Fabric SDK dependencies are now loaded LAZILY inside functions.
+// WHY: In cloud environments (Vercel), these modules can fail during startup.
+// const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
 const fs = require('fs');
 
@@ -67,6 +66,7 @@ async function connectToNetwork(userEmail) {
 
     // 2. Access the Custom Encrypted Wallet
     // WHAT: Uses our Category 3 Fix to securely decrypt keys from the disk.
+    const { Gateway } = require('fabric-network');
     const { getEncryptedWallet } = require('./encrypted-wallet');
     let wallet = await getEncryptedWallet(config.fabric.walletPath);
 
