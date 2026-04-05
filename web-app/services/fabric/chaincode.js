@@ -53,7 +53,17 @@ async function connectToNetwork(userEmail) {
     // 1. Load the Common Connection Profile (CCP)
     // WHAT: CCP is a JSON file that tells the SDK exactly where to find the network
     //   peers, orderers, and certificate authorities (IP addresses and ports).
-    let ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+    let ccp;
+    try {
+        if (!fs.existsSync(config.fabric.ccpPath)) {
+            logger.warn(`CCP file not found at ${config.fabric.ccpPath}. Hyperledger Fabric operations will be disabled.`);
+            return { fabricOffline: true };
+        }
+        ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+    } catch (err) {
+        logger.error(`Error reading CCP file: ${err.message}`);
+        return { fabricOffline: true };
+    }
 
     // 2. Access the Custom Encrypted Wallet
     // WHAT: Uses our Category 3 Fix to securely decrypt keys from the disk.

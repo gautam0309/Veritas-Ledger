@@ -36,9 +36,21 @@ const fs = require('fs');
 const walletUtils = require('./wallet-utils');
 const logger = require('../logger');
 
-//Connection Profile;
-// WHAT: Load network details (IPs, ports, certificates) into memory
-const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+// WHAT: Helper to safely load the CCP from disk
+// WHY: If the file is missing (common on Vercel), we want to fail gracefully with a log, 
+//   not crash the entire server with a 500 error.
+function getSafeCCP() {
+    try {
+        if (!fs.existsSync(config.fabric.ccpPath)) {
+            logger.warn(`CCP file not found at ${config.fabric.ccpPath}. Hyperledger Fabric operations will be disabled.`);
+            return null;
+        }
+        return JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+    } catch (err) {
+        logger.error(`Error reading CCP file: ${err.message}`);
+        return null;
+    }
+}
 
 /**
  * Enrolls Admin object into wallet.
@@ -53,6 +65,13 @@ const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
  */
 async function enrollAdmin() {
     try {
+
+        // WHAT: Load the CCP safely
+        const ccp = getSafeCCP();
+        if (!ccp) {
+            logger.error('Cannot enroll admin: CCP not found.');
+            return { fabricOffline: true };
+        }
 
         // Create a new CA client for interacting with the CA.
         // WHAT: Extracts CA connection details from the Common Connection Profile
@@ -102,6 +121,11 @@ async function enrollAdmin() {
 async function registerUser(email) {
     try {
         // Setup CA client connection (same logic as enrollAdmin)
+        const ccp = getSafeCCP();
+        if (!ccp) {
+            logger.error('Cannot register user: CCP not found.');
+            return { fabricOffline: true };
+        }
         const caInfo = ccp.certificateAuthorities['ca.org1.example.com'];
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
@@ -192,6 +216,11 @@ async function registerUser(email) {
  */
 async function deleteUser(email) {
     try {
+        const ccp = getSafeCCP();
+        if (!ccp) {
+            logger.error('Cannot delete user: CCP not found.');
+            return { fabricOffline: true };
+        }
         const caInfo = ccp.certificateAuthorities['ca.org1.example.com'];
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);

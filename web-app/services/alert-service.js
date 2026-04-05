@@ -127,8 +127,14 @@ class AlertService {
         logger.warn(`[SECURITY_ALERT] Type: ${type} - ${payload.message}`);
         
         // Log to a dedicated security-alerts.log file for historical auditing
-        fs.appendFileSync(path.join(__dirname, '../security-alerts.log'),
-            `\n[${new Date().toISOString()}] ALERT: ${type} - ${JSON.stringify(payload)}`);
+        // WHY: In many serverless environments (like Vercel), the filesystem is read-only.
+        //   We wrap this in a try-catch to prevent a crash if writing fails.
+        try {
+            fs.appendFileSync(path.join(__dirname, '../security-alerts.log'),
+                `\n[${new Date().toISOString()}] ALERT: ${type} - ${JSON.stringify(payload)}`);
+        } catch (err) {
+            logger.warn(`Could not write to security-alerts.log: ${err.message}`);
+        }
     }
 }
 
