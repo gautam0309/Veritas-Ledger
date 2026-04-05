@@ -130,10 +130,15 @@ async function registerUser(email) {
         const { getEncryptedWallet } = require('./encrypted-wallet');
         const walletUtils = require('./wallet-utils');
 
-        const ccp = getSafeCCP();
         if (!ccp) {
-            logger.error('Cannot register user: CCP not found.');
-            return { fabricOffline: true };
+            logger.error('Cannot register user: CCP not found. Generating mock identity.');
+            // WHAT: Mock identity for Vercel/Cloud environments
+            // WHY: satisfies Mongoose validation so the app remains usable in "Limited Mode"
+            return { 
+                fabricOffline: true, 
+                publicKey: "OFFLINE_TEMP_PUBKEY_" + Math.random().toString(36).substring(7),
+                privateKey: "OFFLINE_TEMP_PRIVKEY"
+            };
         }
         const caInfo = ccp.certificateAuthorities['ca.org1.example.com'];
         const caTLSCACerts = caInfo.tlsCACerts.pem;
@@ -202,8 +207,13 @@ async function registerUser(email) {
         );
 
         if (isConnectionError) {
-            logger.error(`FABRIC CA OFFLINE: Certificate Authority unreachable. Returning offline status.`);
-            return { fabricOffline: true, error: error.message };
+            logger.error(`FABRIC CA OFFLINE: Certificate Authority unreachable. Returning mock identity.`);
+            return { 
+                fabricOffline: true, 
+                error: error.message,
+                publicKey: "OFFLINE_TEMP_PUBKEY_" + Math.random().toString(36).substring(7),
+                privateKey: "OFFLINE_TEMP_PRIVKEY"
+            };
         }
 
         logger.error(`Failed to register user ${email}": ${error.message || error}`);

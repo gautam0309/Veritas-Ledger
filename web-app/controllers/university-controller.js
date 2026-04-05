@@ -98,9 +98,13 @@ async function postRegisterUniversity(req, res, next) {
 
         // 3. Register the University as an Organization on the Blockchain itself
         // Note: the final parameter 'req.body.email' acts as their identity context.
-        let result = await chaincode.invokeChaincode("registerUniversity",
-            [req.body.name, keys.publicKey, location, req.body.description], false, req.body.email);
-        logger.debug(`University Registered. Ledger profile: ${result}`);
+        if (!keys.fabricOffline) {
+            let result = await chaincode.invokeChaincode("registerUniversity",
+                [req.body.name, keys.publicKey, location, req.body.description], false, req.body.email);
+            logger.debug(`University Registered on Ledger. Result: ${result}`);
+        } else {
+            logger.warn(`University "${req.body.name}" registered in Limited Mode (MongoDB only). Blockchain sync skipped.`);
+        }
 
         // 4. Audit Trail
         await AuditLog.create({
