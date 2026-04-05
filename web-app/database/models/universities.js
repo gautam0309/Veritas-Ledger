@@ -174,9 +174,5 @@ universitySchema.index({ "email": 1 }, { unique: true });
 // "universities" represents the MongoDB collection name
 let universities = mongoose.model("universities", universitySchema);
 
-// WHAT: Instruct MongoDB to build the indexes (like the email uniqueness index)
-// WHY: Because we have autoIndex: false in mongoose.js, we must call this manually.
-universities.createIndexes();  //idempotent operation. Only called once.  (Calling createIndex manually like this is perfectly fine if autoIndex is turned off)
-
 // WHAT: Export the model for use in controllers and services
 module.exports = universities;

@@ -150,8 +150,5 @@ studentSchema.index({ "email": 1 }, { unique: true });
 // WHAT: Compile the schema into the "students" collection Model
 let students = mongoose.model("students", studentSchema);
 
-// WHAT: Force MongoDB to physically build the indexes (since we disabled autoIndex)
-students.createIndexes();
-
 // WHAT: Export the model for controllers/services to use
 module.exports = students;

@@ -144,8 +144,5 @@ certificateSchema.index({ "rollNumber": 1, "universityEmail": 1 }, { unique: tru
 // WHAT: Compile schema into "certificates" model
 let certificates = mongoose.model("certificates", certificateSchema);
 
-// WHAT: Force index creation
-certificates.createIndexes();
-
 // WHAT: Export the model
 module.exports = certificates;

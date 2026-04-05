@@ -32,11 +32,10 @@ const config = require('../loaders/config');
 //initializes mongodb and exports connection.
 
 
-// WHAT: Tell Mongoose to use the global Node.js Promise library
-// WHY: In older versions of Mongoose, its internal promise library was deprecated.
-//   This explicitly maps mongoose promises to standard standard JavaScript Promises.
-//   (e.g., so `User.findOne().then(...)` works as expected).
-mongoose.Promise = global.Promise;
+// WHAT: Configure global Mongoose settings for Serverless (Vercel)
+// 1. Disable command buffering: Fail immediately if not connected instead of waiting 10s.
+// 2. Disable auto-indexing: Prevent slow index builds on every function invocation.
+mongoose.set('bufferCommands', false);
 
 // WHAT: Establish the actual connection to the MongoDB server
 // HOW: mongoose.connect(URI, options)
@@ -45,18 +44,24 @@ if (!config.mongodbURI) {
     logger.error("MONGODB_URI or MONGO_URI is not defined in environment variables. Database connection skipped.");
 } else {
     mongoose.connect( config.mongodbURI, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-    autoIndex: false
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useUnifiedTopology: true,
+        autoIndex: false,            // Don't build indexes on startup
+        connectTimeoutMS: 10000,     // Give up after 10s if initial connection fails
+        socketTimeoutMS: 45000       // Close sockets after 45s of inactivity
     })
-    // WHAT: .then() executes if the connection succeeds
-    .then(() => logger.info("You are connected to the database"))
-    // WHAT: .catch() executes if the connection fails (e.g., MongoDB not running)
+    .then(() => logger.info("Successfully connected to MongoDB Atlas"))
     .catch((err) => {
-        logger.error(err)
+        logger.error(`CRITICAL: MongoDB Connection Failed: ${err.message}`);
     });
 }
+
+// WHAT: Monitor connection events for better cloud debugging
+mongoose.connection.on('connected', () => logger.info('Mongoose: Connection established'));
+mongoose.connection.on('error', (err) => logger.error(`Mongoose: Connection error: ${err.message}`));
+mongoose.connection.on('disconnected', () => logger.warn('Mongoose: Connection lost'));
+mongoose.connection.on('reconnected', () => logger.info('Mongoose: Connection restored'));
 
 // WHAT: Export the connected mongoose instance
 // WHY: So models can use this exact connection to define schemas and queries.
