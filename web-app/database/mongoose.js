@@ -49,13 +49,14 @@ if (!config.mongodbURI) {
     useCreateIndex: true,
     useUnifiedTopology: true,
     autoIndex: false
-})
-// WHAT: .then() executes if the connection succeeds
-.then(() => logger.info("You are connected to the database"))
-// WHAT: .catch() executes if the connection fails (e.g., MongoDB not running)
-.catch((err) => {
-    logger.error(err)
-});
+    })
+    // WHAT: .then() executes if the connection succeeds
+    .then(() => logger.info("You are connected to the database"))
+    // WHAT: .catch() executes if the connection fails (e.g., MongoDB not running)
+    .catch((err) => {
+        logger.error(err)
+    });
+}
 
 // WHAT: Export the connected mongoose instance
 // WHY: So models can use this exact connection to define schemas and queries.
