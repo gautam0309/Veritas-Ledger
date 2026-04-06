@@ -93,6 +93,7 @@ async function connectToNetwork(userEmail) {
         identity: userEmail, 
         discovery: { enabled: false, asLocalhost: false },
         queryHandlerOptions: {
+            strategy: require('fabric-network').DefaultQueryHandlerStrategies.MSPID_SCOPE_SINGLE,
             timeout: 10000 // 10-second timeout for cloud-to-VPS latency
         }
     });
