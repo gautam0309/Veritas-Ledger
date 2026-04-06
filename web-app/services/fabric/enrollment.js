@@ -47,7 +47,27 @@ function getSafeCCP() {
             logger.warn(`CCP file not found at ${config.fabric.ccpPath}. Hyperledger Fabric operations will be disabled.`);
             return null;
         }
-        return JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+        const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+
+        // Category 4 Fix: Ngrok Tunnel Support (Remote Fabric)
+        // If the app is running on Vercel and FABRIC_PEER_ENDPOINT is set,
+        // we dynamically replace "localhost:7051" with the tunnel address.
+        if (config.fabric.peerEndpoint && ccp.peers) {
+            Object.keys(ccp.peers).forEach(key => {
+                const oldUrl = ccp.peers[key].url;
+                ccp.peers[key].url = config.fabric.peerEndpoint;
+                logger.info(`Ngrok Bridge (CA): Overriding Peer URL ${oldUrl} -> ${ccp.peers[key].url}`);
+            });
+        }
+        if (config.fabric.caEndpoint && ccp.certificateAuthorities) {
+            Object.keys(ccp.certificateAuthorities).forEach(key => {
+                const oldUrl = ccp.certificateAuthorities[key].url;
+                ccp.certificateAuthorities[key].url = config.fabric.caEndpoint;
+                logger.info(`Ngrok Bridge (CA): Overriding CA URL ${oldUrl} -> ${ccp.certificateAuthorities[key].url}`);
+            });
+        }
+
+        return ccp;
     } catch (err) {
         logger.error(`Error reading CCP file: ${err.message}`);
         return null;
