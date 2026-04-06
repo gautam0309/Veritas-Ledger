@@ -65,16 +65,34 @@ function sanitizePem(pem) {
     // HEX GRINDER: If no header, extract ONLY valid hex digits (0-9, a-f)
     const grinder = cleaned.replace(/[^0-9a-fA-F]/g, '');
 
-    // 1. BINARY HEALER (D-Value or Full DER)
+    // 1. BINARY HEALER & PKCS#8 RECONSTRUCTOR
     if (grinder.length > 61) {
-        const buf = Buffer.from(grinder, 'hex');
+        let buf = Buffer.from(grinder, 'hex');
         
-        // CASE: Header-less SEC1 (Does not start with 0x30 SEQUENCE)
+        // CASE: Header-less Binary SEC1 (Does not start with 0x30 SEQUENCE)
+        // This is the smoking gun from Phase 18 telemetry!
         if (buf[0] !== 0x30) {
-            console.log(`[CRYPTO-BRIDGE] ⚙️ HEADER-LESS SEC1 DETECTED. Applying PEM Cloak...`);
-            // Extract private bits and wrap in standard PEM (Compatible with all Node versions)
+            console.log(`[CRYPTO-BRIDGE] ⚙️ HEADER-LESS SEC1 DETECTED. Reconstructing PKCS#8 Envelope...`);
+            
+            // Extract the 32-byte D-value (Private Bits)
             const d_bytes = buf.slice(0, 32);
-            return `-----BEGIN EC PRIVATE KEY-----\n${d_bytes.toString('base64')}\n-----END EC PRIVATE KEY-----`;
+            
+            // PROGRAMMATIC PKCS#8 DER HEADER FOR P-256 (prime256v1)
+            // Identifies the version, curve, and start of the private key octets
+            const p256Pkcs8Header = Buffer.from([
+                0x30, 0x41, // SEQUENCE (Len 65. Adjusting for 32-byte key + internal overhead)
+                0x02, 0x01, 0x00, // Version 0
+                0x30, 0x13, // OID Sequence
+                0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID: id-ecPublicKey
+                0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID: prime256v1
+                0x04, 0x27, // OCTET STRING (Private bits + SEC1 wrap)
+                0x30, 0x25, // SEC1 SEQUENCE
+                0x02, 0x01, 0x01, // Version 1
+                0x04, 0x20  // Private Key Octets (32 bytes)
+            ]);
+
+            // Concatenate the header and the raw key bits
+            return Buffer.concat([p256Pkcs8Header, d_bytes]);
         }
         
         // CASE: Full Hex-encoded DER sequence (Starting with 0x30)
