@@ -41,7 +41,7 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * Hex Grinder: Recursively cleans and extracts ONLY hex characters if missing headers
+ * SEC1 Auto-Healer: Recursively cleans, extracts Hex, and heals malformed headers
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
@@ -63,16 +63,18 @@ function sanitizePem(pem) {
     }
 
     // HEX GRINDER: If no header, extract ONLY valid hex digits (0-9, a-f)
-    // This obliterates any hidden BOMs, null bytes, or literal escapes
     const grinder = cleaned.replace(/[^0-9a-fA-F]/g, '');
 
-    // 1. RAW HEX DETECT (D-Value or full DER)
-    if (grinder.length > 61) { // 32 bytes (64 chars) +/- common header artifacts
-        // CASE: Exact 32-byte D-Value
-        if (grinder.length === 64) {
-            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Raw Hex (32-byte D-Value)`);
-            const b64url = Buffer.from(grinder, 'hex')
-                .toString('base64')
+    // 1. BINARY HEALER (D-Value or Full DER)
+    if (grinder.length > 61) {
+        const buf = Buffer.from(grinder, 'hex');
+        
+        // CASE: Header-less SEC1 (Does not start with 0x30 SEQUENCE)
+        if (buf[0] !== 0x30) {
+            console.log(`[CRYPTO-BRIDGE] ⚠️ HEADER-LESS SEC1 DETECTED. Healing to JWK...`);
+            // Extract the private key bits (D-value). In raw SEC1, it's often the first 32 bytes.
+            const d_bytes = buf.slice(0, 32);
+            const b64url = d_bytes.toString('base64')
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')
                 .replace(/=/g, '');
@@ -83,11 +85,9 @@ function sanitizePem(pem) {
             };
         }
         
-        // CASE: Hex-encoded DER sequence (like 558 chars)
-        if (grinder.length > 64) {
-            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Grinder Success: ${grinder.length} chars)`);
-            return Buffer.from(grinder, 'hex');
-        }
+        // CASE: Full Hex-encoded DER sequence (Starting with 0x30)
+        console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Grinder Success: ${grinder.length} chars)`);
+        return buf;
     }
 
     // 2. JWK DETECT: If it looks like JSON after peeling
@@ -156,11 +156,10 @@ function patchCryptoSuite(CryptoSuiteClass) {
             console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS.`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
-            // DEEP TELEMETRY: Show more HEX signature if parse fails
-            const sample = rawPem.substring(0, 20);
-            const hexSample = Buffer.from(sample).toString('hex');
+            // DEEP TELEMETRY: Show the ACTUAL binary hex of the buffer if parse fails
+            const binaryHex = cleanPem instanceof Buffer ? cleanPem.toString('hex').substring(0, 40) : "not-a-buffer";
             console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Err: ${e.message}`);
-            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, HexSample=${hexSample}`);
+            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, BinaryHex=${binaryHex}`);
             
             return originalCreateKey.call(this, cleanPem);
         }
