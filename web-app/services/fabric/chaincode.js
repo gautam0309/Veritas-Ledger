@@ -93,7 +93,7 @@ async function connectToNetwork(userEmail) {
         identity: userEmail, 
         discovery: { enabled: false, asLocalhost: false },
         queryHandlerOptions: {
-            timeout: 3000 // 3-second timeout for queries
+            timeout: 10000 // 10-second timeout for cloud-to-VPS latency
         }
     });
 
