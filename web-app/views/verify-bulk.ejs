@@ -68,8 +68,8 @@
                                             </thead>
                                             <tbody>
                                                 <% results.forEach(function(r, idx) { %>
-                                                    <% let rowColor=r.status==='success' ? '#38f9d7' : '#f85149' ; %>
-                                                        <tr style="<%- 'color: ' + rowColor + ';' %>">
+                                                    <% let rowStyle = r.status === 'success' ? 'style="color: #38f9d7;"' : 'style="color: #f85149;"'; %>
+                                                        <tr <%- rowStyle %>>
                                                             <td>
                                                                 <%= idx + 1 %>
                                                             </td>
