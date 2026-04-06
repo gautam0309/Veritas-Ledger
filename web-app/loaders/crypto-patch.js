@@ -71,18 +71,10 @@ function sanitizePem(pem) {
         
         // CASE: Header-less SEC1 (Does not start with 0x30 SEQUENCE)
         if (buf[0] !== 0x30) {
-            console.log(`[CRYPTO-BRIDGE] ⚠️ HEADER-LESS SEC1 DETECTED. Healing to JWK...`);
-            // Extract the private key bits (D-value). In raw SEC1, it's often the first 32 bytes.
+            console.log(`[CRYPTO-BRIDGE] ⚙️ HEADER-LESS SEC1 DETECTED. Applying PEM Cloak...`);
+            // Extract private bits and wrap in standard PEM (Compatible with all Node versions)
             const d_bytes = buf.slice(0, 32);
-            const b64url = d_bytes.toString('base64')
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=/g, '');
-            return {
-                kty: 'EC',
-                crv: 'P-256',
-                d: b64url
-            };
+            return `-----BEGIN EC PRIVATE KEY-----\n${d_bytes.toString('base64')}\n-----END EC PRIVATE KEY-----`;
         }
         
         // CASE: Full Hex-encoded DER sequence (Starting with 0x30)
@@ -130,19 +122,9 @@ function patchCryptoSuite(CryptoSuiteClass) {
         try {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native parse...`);
             
-            let options = cleanPem;
-            
-            // Handle Buffer (DER/Binary)
-            if (Buffer.isBuffer(cleanPem)) {
-                // Node's createPrivateKey with Buffer defaults to DER format
-                options = cleanPem;
-            } 
-            // Handle JWK Object format
-            else if (typeof cleanPem === 'object' && cleanPem !== null) {
-                options = { key: cleanPem, format: 'jwk' };
-            }
-
-            const privateKey = crypto.createPrivateKey(options);
+            // The Cloak already provides a String (PEM) or Buffer (DER).
+            // Pass it directly to ensure universal compatibility with all Node versions.
+            const privateKey = crypto.createPrivateKey(cleanPem);
             
             const nativeKey = {
                 type: 'EC',
