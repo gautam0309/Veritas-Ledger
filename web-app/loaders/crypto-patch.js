@@ -41,7 +41,7 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * Identity Autodidact: Recursively cleans and autodetects key formats (JWK, SEC1, PKCS8)
+ * Identity Autodidact: Recursively cleans and autodetects key formats (Hex-DER, JWK, PEM)
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
@@ -59,6 +59,16 @@ function sanitizePem(pem) {
 
     // NORMALIZE NEWLINES: Handle literal escapes from databases
     cleaned = cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+
+    // HEX-DER DETECT: If it's a long hex string, it's likely binary DER
+    if (/^[0-9a-fA-F\s]+$/.test(cleaned) && cleaned.length > 64) {
+        try {
+            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Length=${cleaned.length})`);
+            return Buffer.from(cleaned.replace(/\s/g, ''), 'hex');
+        } catch (e) {
+            console.warn(`[CRYPTO-BRIDGE] ⚠️ HEX DECODE FAILED: Trying as raw string...`);
+        }
+    }
 
     // JWK DETECT: If it starts with {, it's a JSON Web Key
     if (cleaned.startsWith('{')) {
@@ -101,8 +111,14 @@ function patchCryptoSuite(CryptoSuiteClass) {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native parse...`);
             
             let options = cleanPem;
+            
+            // Handle Buffer (DER/Binary)
+            if (Buffer.isBuffer(cleanPem)) {
+                // Node's createPrivateKey with Buffer defaults to DER format
+                options = cleanPem;
+            } 
             // Handle JWK Object format
-            if (typeof cleanPem === 'object' && cleanPem !== null) {
+            else if (typeof cleanPem === 'object' && cleanPem !== null) {
                 options = { key: cleanPem, format: 'jwk' };
             }
 
