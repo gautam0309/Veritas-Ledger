@@ -22,6 +22,14 @@
 // WHAT: Import the enrollment service that handles Fabric CA interactions
 // WHY: We need the enrollAdmin() function to bootstrap the admin identity
 // IF REMOVED: Admin enrollment wouldn't happen at startup — no Fabric operations would work
+// VERCEL BUNDLE GUARD: Force include dynamic Fabric crypto modules
+// This prevents the "Cannot find module 'fabric-common/lib/impl/CryptoSuite_ECDSA_AES'" error on Vercel.
+try {
+    require('fabric-common/lib/impl/CryptoSuite_ECDSA_AES');
+} catch (e) {
+    // This is purely for the Vercel bundler (NFT) to see the path during compilation.
+}
+
 let enrollment = require("../services/fabric/enrollment");
 
 // WHAT: Call enrollAdmin() to ensure the Fabric CA admin identity exists in the wallet
