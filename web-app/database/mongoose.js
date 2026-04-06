@@ -43,17 +43,24 @@ mongoose.set('bufferCommands', false);
 if (!config.mongodbURI) {
     logger.error("MONGODB_URI or MONGO_URI is not defined in environment variables. Database connection skipped.");
 } else {
+    // 🔍 DEBUG: Log a redacted URI to help diagnose connection strings in Vercel
+    // It hides the password but shows the username and host structure.
+    const redactedURI = config.mongodbURI.replace(/:([^:@]+)@/, ':****@');
+    logger.info(`Mongoose: Attempting connection to ${redactedURI}`);
+
     mongoose.connect( config.mongodbURI, {
         useNewUrlParser: true,
         useCreateIndex: true,
         useUnifiedTopology: true,
-        autoIndex: false,            // Don't build indexes on startup
-        connectTimeoutMS: 10000,     // Give up after 10s if initial connection fails
-        socketTimeoutMS: 45000       // Close sockets after 45s of inactivity
+        autoIndex: false,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000, // IMPORTANT for Vercel: Fail fast if DNS/Network is blocked
+        heartbeatFrequencyMS: 10000     // Keep the connection warm
     })
     .then(() => logger.info("Successfully connected to MongoDB Atlas"))
     .catch((err) => {
-        logger.error(`CRITICAL: MongoDB Connection Failed: ${err.message}`);
+        logger.error(`CRITICAL: MongoDB Connection Failed. Structure: ${redactedURI} | Error: ${err.message}`);
     });
 }
 
