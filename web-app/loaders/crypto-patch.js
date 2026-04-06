@@ -93,18 +93,30 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
         const y = Buffer.from(jwk.y, 'base64url');
         const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
 
+        // Export the private key PEM for wallet serialization (toBytes)
+        const privatePem = isPrivate ? keyObject.export({ type: 'pkcs8', format: 'pem' }) : null;
+
         const nativeKey = {
             type: 'EC',
-            pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
-            prvKeyHex: '',
+            pubKeyHex: pubKeyHex,
+            prvKeyHex: isPrivate ? 'native' : null, // null = isPrivate() returns false; non-null = true
             ecparams: { name: 'secp256r1', keylen: 256 },
             getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
-            __nativeKey: isPrivate ? keyObject : null, // Only store for signing if it's a private key
-            __isNative: isPrivate // Only mark as native-signable for private keys
+            __nativeKey: isPrivate ? keyObject : null,
+            __isNative: isPrivate,
+            __privatePem: privatePem // Store PEM for toBytes()
         };
         
         console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (${label}). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
-        return new ECDSAKey(nativeKey);
+        const ecdsaKey = new ECDSAKey(nativeKey);
+
+        // Override toBytes() so wallet serialization exports the real PEM
+        // instead of calling KEYUTIL.getPEM() which fails on our wrapper
+        if (isPrivate && privatePem) {
+            ecdsaKey.toBytes = function() { return privatePem; };
+        }
+
+        return ecdsaKey;
     }
 
     const originalCreateKey = CryptoSuiteClass.prototype.createKeyFromRaw;
