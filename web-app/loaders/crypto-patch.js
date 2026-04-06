@@ -78,6 +78,30 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
 
     console.log(`[CRYPTO-BRIDGE] ⚙️ SDK-LEVEL: Found CryptoSuite_ECDSA_AES. Applying Native Bridge...`);
     
+    /**
+     * Internal Helper: Wraps a native private key and hydrides it with Fabric SDK metadata (PubKeyHex, XY points)
+     */
+    function createHydratedKey(privateKey, ECDSAKey, label) {
+        const publicKey = crypto.createPublicKey(privateKey);
+        const jwk = publicKey.export({ format: 'jwk' });
+        const x = Buffer.from(jwk.x, 'base64url');
+        const y = Buffer.from(jwk.y, 'base64url');
+        const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
+
+        const nativeKey = {
+            type: 'EC',
+            pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
+            prvKeyHex: '',
+            ecparams: { name: 'secp256r1', keylen: 256 },
+            getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
+            __nativeKey: privateKey,
+            __isNative: true
+        };
+        
+        console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (${label}). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
+        return new ECDSAKey(nativeKey);
+    }
+
     const originalCreateKey = CryptoSuiteClass.prototype.createKeyFromRaw;
     CryptoSuiteClass.prototype.createKeyFromRaw = function(pem) {
         if (!pem) return originalCreateKey.call(this, pem);
@@ -86,65 +110,32 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
         const cleanPem = sanitizePem(rawPem);
 
         // Dependency Resolution: Use captured ECDSAKey if available, otherwise try relative
-        const ECDSAKey = registry.ECDSAKey || require('./ecdsa/key.js');
+        const ECDSAKey = registry.ECDSAKey || require('./impl/ecdsa/key.js');
 
+        // 1. TRY RAW PEM (Most robust for legacy keys like Admin)
+        if (typeof cleanPem === 'string') {
+            try {
+                console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting raw PEM load...`);
+                const privateKey = crypto.createPrivateKey(cleanPem);
+                return createHydratedKey(privateKey, ECDSAKey, 'RAW-PEM');
+            } catch (e) {}
+        }
+
+        // 2. TRY PKCS#8 (Standard for decrypted student keys)
         try {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native pkcs8...`);
             const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'pkcs8' } : cleanPem;
             const privateKey = crypto.createPrivateKey(options);
-            
-            // HYDRATION: Extract the Public Key Point (X, Y) to satisfy Fabric SDK's pubKeyHex requirement
-            const publicKey = crypto.createPublicKey(privateKey);
-            const jwk = publicKey.export({ format: 'jwk' });
-            const x = Buffer.from(jwk.x, 'base64url');
-            const y = Buffer.from(jwk.y, 'base64url');
-            const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
-
-            const nativeKey = {
-                type: 'EC',
-                pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
-                prvKeyHex: '',
-                ecparams: { name: this._curveName || 'secp256r1', keylen: 256 },
-                getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
-                __nativeKey: privateKey,
-                __isNative: true
-            };
-            
-            console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (PKCS#8). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
-            return new ECDSAKey(nativeKey);
+            return createHydratedKey(privateKey, ECDSAKey, 'PKCS#8');
         } catch (e) {
+            // 3. TRY SEC1 Fallback
             try {
                 console.log(`[CRYPTO-BRIDGE] ⚙️ SEC1 Fallback: Trying native sec1...`);
                 const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'sec1' } : cleanPem;
                 const privateKey = crypto.createPrivateKey(options);
-                
-                // HYDRATION: Extract the Public Key Point (X, Y) to satisfy Fabric SDK's pubKeyHex requirement
-                const publicKey = crypto.createPublicKey(privateKey);
-                const jwk = publicKey.export({ format: 'jwk' });
-                const x = Buffer.from(jwk.x, 'base64url');
-                const y = Buffer.from(jwk.y, 'base64url');
-                const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
-
-                const nativeKey = {
-                    type: 'EC',
-                    pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
-                    prvKeyHex: '',
-                    ecparams: { name: this._curveName || 'secp256r1', keylen: 256 },
-                    getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
-                    __nativeKey: privateKey,
-                    __isNative: true
-                };
-                
-                console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (SEC1). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
-                return new ECDSAKey(nativeKey);
+                return createHydratedKey(privateKey, ECDSAKey, 'SEC1');
             } catch (e2) {
-                console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! PKCS8: ${e.message}, SEC1: ${e2.message}`);
-                
-                // FORENSIC TELEMETRY: Show the FIRST 10 BYTES of the payload to reveal binary structure
-                const sampleHex = Buffer.from(cleanPem).toString('hex').substring(0, 20);
-                console.error(`[CRYPTO-BRIDGE] 🔍 Forensic Telemetry: Sample="${sampleHex}", Length=${cleanPem.length}`);
-                
-                // BUFFER SAFETY: If native loader fails, conversion to string prevents jsrsasign crash
+                console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Raw/PKCS8/SEC1 aborted. Sample=${Buffer.from(cleanPem).toString('hex').substring(0, 20)}`);
                 const fallbackPem = Buffer.isBuffer(cleanPem) ? cleanPem.toString('hex') : cleanPem;
                 return originalCreateKey.call(this, fallbackPem);
             }
@@ -200,7 +191,35 @@ Module.prototype.require = function(request) {
         patchCryptoSuite(result, registry);
     }
 
+    // 3. Catch ServiceEndpoint (The Ghost Timeout)
+    if (request.endsWith('ServiceEndpoint.js') || (result && result.name === 'ServiceEndpoint')) {
+        patchServiceEndpoint(result);
+    }
+
     return result;
 };
+
+/**
+ * Global ServiceEndpoint Timeout Hook: Overrides the hardcoded 3000ms SDK limit.
+ */
+function patchServiceEndpoint(ServiceEndpointClass) {
+    if (!ServiceEndpointClass || !ServiceEndpointClass.prototype || ServiceEndpointClass.__antigravity_patched) return;
+
+    const originalWaitForReady = ServiceEndpointClass.prototype.waitForReady;
+    ServiceEndpointClass.prototype.waitForReady = function() {
+        if (this.options) {
+            // THE GHOST TIMEOUT: Fabric defaults to 3000ms if not specified or too low.
+            const currentTimeout = this.options['grpc-wait-for-ready-timeout'] || 3000;
+            if (currentTimeout < 20000) {
+                console.log(`[CRYPTO-BRIDGE] ⏳ TIMEOUT-HOOK: Increasing waitForReady for ${this.name} to 30000ms`);
+                this.options['grpc-wait-for-ready-timeout'] = 30000;
+            }
+        }
+        return originalWaitForReady.apply(this, arguments);
+    };
+
+    ServiceEndpointClass.__antigravity_patched = true;
+    console.log(`[CRYPTO-BRIDGE] ✅ NET-LEVEL: ServiceEndpoint Hook ACTIVE.`);
+}
 
 console.log('🚀 [CRYPTO-BRIDGE] Native Crypto Bridge Interceptor ACTIVE for Node.js ' + process.version);
