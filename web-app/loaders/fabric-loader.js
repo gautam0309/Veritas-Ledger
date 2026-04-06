@@ -30,12 +30,8 @@ let enrollment = require("../services/fabric/enrollment");
 //   - Submitting transactions to the blockchain
 //   - Managing identities in the Fabric CA
 // CONCEPT — Fire-and-forget:
-//   enrollAdmin() is async but we DON'T await it here.
-//   The app continues starting up while enrollment happens in the background.
-//   We wrap this in a TRY-CATCH to ensure that if the Fabric SDK fails to load
-//   (common in serverless Vercel), it doesn't crash the whole server.
-try {
-    enrollment.enrollAdmin();
-} catch (err) {
-    logger.error("Hyperledger Fabric initialization failed (expected on Vercel). App will run in Limited Mode.");
-}
+//   enrollAdmin() is async but we DON'T await it here to speed up startup.
+//   We MUST catch any rejections to prevent crashing the server (Unhandled Promise Rejection).
+enrollment.enrollAdmin().catch(err => {
+    logger.error(`Hyperledger Fabric background initialization failed: ${err.message || err}. App will proceed in Limited Mode.`);
+});

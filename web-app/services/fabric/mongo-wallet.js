@@ -101,21 +101,45 @@ class MongoWalletStore {
 }
 
 /**
- * Returns a new Fabric Wallet instance backed by MongoDB Atlas with encryption.
+ * Helper to ensure MongoDB is connected before proceed
+ */
+async function ensureConnected() {
+    if (mongoose.connection.readyState === 1) return;
+    if (mongoose.connection.readyState === 2) {
+        logger.info("MongoWallet: Waiting for MongoDB connection...");
+        await new Promise((resolve) => {
+            const timeout = setTimeout(resolve, 5000);
+            mongoose.connection.once('connected', () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+        });
+        return;
+    }
+    throw new Error("MongoDB not connected. Cannot access Cloud Wallet.");
+}
+
+/**
+ * Returns a Wallet instance backed by MongoDB
  * @returns {Promise<Wallet>}
  */
 async function getMongoWallet() {
-    const { Wallet, Wallets } = require('fabric-network');
-    const store = new MongoWalletStore();
-    
-    // Support for different fabric-network 2.x versions
-    if (Wallets && typeof Wallets.newWallet === 'function') {
-        return Wallets.newWallet(store);
-    } else if (typeof Wallet === 'function') {
-        // Fallback to direct constructor if Wallets.newWallet is missing
-        return new Wallet(store);
-    } else {
-        throw new Error('Fabric SDK: Could not find a valid Wallet constructor/factory in fabric-network');
+    try {
+        await ensureConnected();
+        const { Wallet, Wallets } = require('fabric-network');
+        const store = new MongoWalletStore();
+        
+        // Support for different fabric-network 2.x versions
+        if (Wallets && typeof Wallets.newWallet === 'function') {
+            return await Wallets.newWallet(store);
+        } else if (typeof Wallet === 'function') {
+            return new Wallet(store);
+        } else {
+            throw new Error('Fabric Network Wallet constructor not found. Check fabric-network version.');
+        }
+    } catch (err) {
+        logger.error(`Failed to create Mongo Wallet: ${err.message}`);
+        throw err;
     }
 }
 
