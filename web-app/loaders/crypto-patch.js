@@ -88,30 +88,37 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
         // Determine if this is a private or public key
         const isPrivate = keyObject.type === 'private';
         const publicKey = isPrivate ? crypto.createPublicKey(keyObject) : keyObject;
-        const jwk = publicKey.export({ format: 'jwk' });
-        const x = Buffer.from(jwk.x, 'base64url');
-        const y = Buffer.from(jwk.y, 'base64url');
+        const pubJwk = publicKey.export({ format: 'jwk' });
+        const x = Buffer.from(pubJwk.x, 'base64url');
+        const y = Buffer.from(pubJwk.y, 'base64url');
         const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
+
+        // Extract the REAL private key hex from JWK for jsrsasign compatibility
+        let prvKeyHex = null;
+        if (isPrivate) {
+            const privJwk = keyObject.export({ format: 'jwk' });
+            prvKeyHex = Buffer.from(privJwk.d, 'base64url').toString('hex');
+        }
 
         // Export the private key PEM for wallet serialization (toBytes)
         const privatePem = isPrivate ? keyObject.export({ type: 'pkcs8', format: 'pem' }) : null;
 
+        // Build a key object that jsrsasign's ECDSA can work with directly
         const nativeKey = {
             type: 'EC',
             pubKeyHex: pubKeyHex,
-            prvKeyHex: isPrivate ? 'native' : null, // null = isPrivate() returns false; non-null = true
+            prvKeyHex: prvKeyHex, // REAL hex = jsrsasign ECDSA.sign() works natively with low-S
+            curveName: 'secp256r1',
             ecparams: { name: 'secp256r1', keylen: 256 },
             getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
             __nativeKey: isPrivate ? keyObject : null,
-            __isNative: isPrivate,
-            __privatePem: privatePem // Store PEM for toBytes()
+            __privatePem: privatePem
         };
         
         console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (${label}). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
         const ecdsaKey = new ECDSAKey(nativeKey);
 
         // Override toBytes() so wallet serialization exports the real PEM
-        // instead of calling KEYUTIL.getPEM() which fails on our wrapper
         if (isPrivate && privatePem) {
             ecdsaKey.toBytes = function() { return privatePem; };
         }
@@ -149,14 +156,14 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
             } catch (e) {}
         }
 
-        // 2. TRY PKCS#8 (Standard for decrypted student keys)
+        // 3. TRY PKCS#8 (Standard for decrypted student keys)
         try {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native pkcs8...`);
             const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'pkcs8' } : cleanPem;
             const privateKey = crypto.createPrivateKey(options);
             return createHydratedKey(privateKey, ECDSAKey, 'PKCS#8');
         } catch (e) {
-            // 3. TRY SEC1 Fallback
+            // 4. TRY SEC1 Fallback
             try {
                 console.log(`[CRYPTO-BRIDGE] ⚙️ SEC1 Fallback: Trying native sec1...`);
                 const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'sec1' } : cleanPem;
@@ -175,26 +182,8 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
         }
     };
 
-    // Override sign to use Node native sign()
-    const originalSign = CryptoSuiteClass.prototype.sign;
-    CryptoSuiteClass.prototype.sign = function(key, digest) {
-        if (key && key._key && key._key.__isNative) {
-            try {
-                console.log(`[CRYPTO-BRIDGE] 🖊️ NATIVE_SIGN: Performing native ECDSA signature...`);
-                // Perform a native ECDSA signature with Node's crypto
-                const signature = crypto.sign(
-                    null, // algorithm (null for EC signatures where we just need the raw signature)
-                    digest,
-                    key._key.__nativeKey
-                );
-                return signature;
-            } catch (e) {
-                console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_SIGN FAILED:`, e.message);
-                throw e;
-            }
-        }
-        return originalSign.apply(this, arguments);
-    };
+    // NOTE: We do NOT override sign() anymore. By providing real prvKeyHex,
+    // the original SDK signer (jsrsasign ECDSA + _preventMalleability) works correctly.
 
     CryptoSuiteClass.__antigravity_patched = true;
     console.log(`[CRYPTO-BRIDGE] ✅ SDK-LEVEL: Native Bridge ACTIVE.`);
