@@ -20,7 +20,7 @@
 
 
 const fabricEnrollment = require('./fabric/enrollment');
-const { getEncryptedWallet } = require('./fabric/encrypted-wallet');
+const { getMongoWallet } = require('./fabric/mongo-wallet');
 const config = require('../loaders/config');
 const logger = require('./logger');
 
@@ -38,8 +38,8 @@ const logger = require('./logger');
  */
 async function ensureIdentity(email) {
     try {
-        // Open the wallet store
-        const wallet = await getEncryptedWallet(config.fabric.walletPath);
+        // Open the cloud-synced MongoDB wallet
+        const wallet = await getMongoWallet();
         const identity = await wallet.get(email);
 
         // Standard case: User's crypto files exist on disk.

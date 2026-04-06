@@ -77,7 +77,7 @@ async function enrollAdmin() {
 
         // WHAT: Lazy load the Fabric SDK and helpers
         const FabricCAServices = require('fabric-ca-client');
-        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const { getMongoWallet } = require('./mongo-wallet');
         const walletUtils = require('./wallet-utils');
 
         // Create a new CA client for interacting with the CA.
@@ -87,7 +87,7 @@ async function enrollAdmin() {
         // Connect to the CA service (verify: false is used for self-signed development certs)
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        const wallet = await getEncryptedWallet(config.fabric.walletPath);
+        const wallet = await getMongoWallet();
 
         // Check if we've already done this
         const identity = await wallet.get('admin');
