@@ -59,6 +59,23 @@ async function connectToNetwork(userEmail) {
             return { fabricOffline: true };
         }
         ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
+
+        // Category 4 Fix: Dynamic CCP Hardening (Long Link)
+        // WHY: The SDK defaults to a 3-second connection timeout, which is too aggressive for Vercel -> VPS.
+        //   We dynamically inject 'request-timeout' and keep-alives into the CCP.
+        const peers = ccp.peers || {};
+        for (const peerName in peers) {
+            if (!peers[peerName].grpcOptions) peers[peerName].grpcOptions = {};
+            peers[peerName].grpcOptions['request-timeout'] = 45000; // 45 seconds
+            peers[peerName].grpcOptions['grpc.keepalive_time_ms'] = 120000;
+            peers[peerName].grpcOptions['grpc.keepalive_timeout_ms'] = 20000;
+        }
+        const orderers = ccp.orderers || {};
+        for (const ordererName in orderers) {
+            if (!orderers[ordererName].grpcOptions) orderers[ordererName].grpcOptions = {};
+            orderers[ordererName].grpcOptions['request-timeout'] = 45000;
+            orderers[ordererName].grpcOptions['grpc.keepalive_time_ms'] = 120000;
+        }
     } catch (err) {
         logger.error(`Error reading CCP file: ${err.message}`);
         return { fabricOffline: true };
