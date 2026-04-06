@@ -1,7 +1,8 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { Wallets } = require('fabric-network');
+// WHAT: Lazy-loaded inside functions below to prevent startup crashes on Vercel/Cloud.
+// const { Wallets } = require('fabric-network');
 const FabricIdentity = require('../../database/models/fabric-identity');
 const { encrypt, decrypt } = require('./encrypted-wallet');
 const logger = require('../logger');
