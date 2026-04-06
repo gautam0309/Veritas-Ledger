@@ -30,13 +30,18 @@ class MongoWalletStore {
             const identity = JSON.parse(result.identity);
 
             // Decrypt the private key before returning to the Fabric SDK
-            // WHY (Phase 22): Student identities in MongoDB Atlas are GCM-encrypted (iv:tag:data).
-            // We use the 'decrypt' function from encrypted-wallet.js which supports this format.
             if (identity && identity.credentials && identity.credentials.privateKey) {
-                const decryptedKey = decrypt(identity.credentials.privateKey);
+                const keyData = identity.credentials.privateKey;
+                let decryptedKey;
+
+                // HYBRID CHECK: If it looks like a PEM (unencrypted), don't try to decrypt
+                if (typeof keyData === 'string' && keyData.startsWith('-----')) {
+                    decryptedKey = keyData;
+                } else {
+                    decryptedKey = decrypt(keyData);
+                }
                 
                 // SUPER SANITIZATION: Remove any database encoding artifacts
-                // This ensures the key is clean for the Node.js native crypto engine.
                 identity.credentials.privateKey = decryptedKey
                     .replace(/\\n/g, '\n') 
                     .replace(/\\r/g, '\r') 

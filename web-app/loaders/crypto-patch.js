@@ -114,7 +114,18 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
         // Dependency Resolution: Use captured ECDSAKey if available, otherwise try relative
         const ECDSAKey = registry.ECDSAKey || require('./impl/ecdsa/key.js');
 
-        // 1. TRY RAW PEM (Most robust for legacy keys like Admin)
+        // 1. TRY CERTIFICATE (For Admin or Pub-Only identities)
+        if (typeof cleanPem === 'string' && cleanPem.includes('-----BEGIN CERTIFICATE-----')) {
+            try {
+                console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Detected Certificate... Extracting Public Key.`);
+                const publicKey = crypto.createPublicKey(cleanPem);
+                return createHydratedKey(publicKey, ECDSAKey, 'CERT-PUB');
+            } catch (eCert) {
+                console.error(`[CRYPTO-BRIDGE] ❌ CERT-LOAD FAILED: ${eCert.message}`);
+            }
+        }
+
+        // 2. TRY RAW PRIVATE KEY (Most robust for legacy keys like Admin)
         if (typeof cleanPem === 'string') {
             try {
                 console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting raw PEM load...`);
