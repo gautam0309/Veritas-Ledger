@@ -156,10 +156,16 @@ async function registerUser(email) {
 
         // Check to see if we have the admin identity!
         // WHY: We need admin privileges to tell the CA to register a new user
-        const adminIdentity = await wallet.get('admin');
+        let adminIdentity = await wallet.get('admin');
         if (!adminIdentity) {
-            throw Error('An identity for the admin user "admin" does not exist in the wallet');
-
+            // AUTO-HEAL: If admin is missing (cold start race condition or purged DB),
+            // enroll it now before proceeding.
+            logger.info('Admin identity missing — auto-enrolling before registration...');
+            await enrollAdmin();
+            adminIdentity = await wallet.get('admin');
+            if (!adminIdentity) {
+                throw Error('Admin auto-enrollment failed. Cannot register user.');
+            }
         }
 
         // Build a user object for authenticating with the CA using the admin's identity
@@ -249,10 +255,15 @@ async function deleteUser(email) {
 
         const wallet = await getMongoWallet();
 
-        const adminIdentity = await wallet.get('admin');
+        let adminIdentity = await wallet.get('admin');
         if (!adminIdentity) {
-            throw Error('An identity for the admin user "admin" does not exist in the wallet');
+            await enrollAdmin();
+            adminIdentity = await wallet.get('admin');
+            if (!adminIdentity) {
+                throw Error('Admin auto-enrollment failed. Cannot delete user.');
+            }
         }
+
 
         const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
         const adminUser = await provider.getUserContext(adminIdentity, 'admin');
