@@ -127,6 +127,14 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
     try {
         // Build the network connection for the specific user
         let networkObj = await connectToNetwork(userEmail);
+        
+        // Category 4 Fix: Handle Offline Fabric Circuit Breaker
+        // WHY: If connectToNetwork failed to find CCP or connect to Gateway, 
+        //   it returns this flag. We must STOP and return it to the caller.
+        if (networkObj.fabricOffline) {
+            return { fabricOffline: true };
+        }
+
         logger.debug('inside invoke');
         logger.debug(`isQuery: ${isQuery}, func: ${func}, args: ${args}`);
 
