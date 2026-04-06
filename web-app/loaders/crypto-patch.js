@@ -81,10 +81,13 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
     console.log(`[CRYPTO-BRIDGE] ⚙️ SDK-LEVEL: Found CryptoSuite_ECDSA_AES. Applying Native Bridge...`);
     
     /**
-     * Internal Helper: Wraps a native private key and hydrides it with Fabric SDK metadata (PubKeyHex, XY points)
+     * Internal Helper: Wraps a native key (private OR public) with Fabric SDK metadata (PubKeyHex, XY points).
+     * Certificates are legitimately passed here by the SDK to extract the public key for verification.
      */
-    function createHydratedKey(privateKey, ECDSAKey, label) {
-        const publicKey = crypto.createPublicKey(privateKey);
+    function createHydratedKey(keyObject, ECDSAKey, label) {
+        // Determine if this is a private or public key
+        const isPrivate = keyObject.type === 'private';
+        const publicKey = isPrivate ? crypto.createPublicKey(keyObject) : keyObject;
         const jwk = publicKey.export({ format: 'jwk' });
         const x = Buffer.from(jwk.x, 'base64url');
         const y = Buffer.from(jwk.y, 'base64url');
@@ -96,8 +99,8 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
             prvKeyHex: '',
             ecparams: { name: 'secp256r1', keylen: 256 },
             getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
-            __nativeKey: privateKey,
-            __isNative: true
+            __nativeKey: isPrivate ? keyObject : null, // Only store for signing if it's a private key
+            __isNative: isPrivate // Only mark as native-signable for private keys
         };
         
         console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (${label}). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
