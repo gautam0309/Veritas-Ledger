@@ -174,20 +174,43 @@ async function registerUser(email) {
 
         // STEP 1: REGISTER
         // WHAT: Tell the CA "I authorize 'email' to join the network. Here are their attributes."
-        // ABAC NOTE: Notice the 'attrs' array. We embed the user's email directly into their
-        //   cryptographic certificate (ecert: true). This is the key to Attribute-Based Access Control.
-        const secret = await ca.register({
-            affiliation: 'org1.department1',
-            enrollmentID: email,
-            role: 'client',
-            attrs: [
-                { name: 'email', value: email, ecert: true }
-            ]
-        }, adminUser);
+        // If the user was previously registered (from old network lifecycle), we catch the
+        // "already registered" error and proceed to enroll with admin re-registration.
+        let secret;
+        try {
+            secret = await ca.register({
+                affiliation: 'org1.department1',
+                enrollmentID: email,
+                role: 'client',
+                attrs: [
+                    { name: 'email', value: email, ecert: true }
+                ]
+            }, adminUser);
+        } catch (regErr) {
+            if (regErr.message && regErr.message.includes('already registered')) {
+                // User exists in CA from previous lifecycle — delete and re-register
+                logger.info(`User ${email} already registered in CA. Removing and re-registering...`);
+                try {
+                    const idService = ca.newIdentityService();
+                    await idService.delete(email, adminUser);
+                } catch (delErr) {
+                    logger.warn(`Could not delete old identity ${email}: ${delErr.message}`);
+                }
+                secret = await ca.register({
+                    affiliation: 'org1.department1',
+                    enrollmentID: email,
+                    role: 'client',
+                    attrs: [
+                        { name: 'email', value: email, ecert: true }
+                    ]
+                }, adminUser);
+            } else {
+                throw regErr;
+            }
+        }
 
         // STEP 2: ENROLL
         // WHAT: The new user claims their identity using the secret generated in step 1.
-        // We MUST request the 'email' attribute to be embedded in the final cert.
         const enrollment = await ca.enroll({
             enrollmentID: email,
             enrollmentSecret: secret,
@@ -198,9 +221,9 @@ async function registerUser(email) {
 
         // STEP 3: SAVE TO WALLET
         let userKeys = await walletUtils.createNewWalletEntity(enrollment, email);
-        logger.info(`Successfully registered and enrolled  user ${email} and imported it into the wallet`);
+        logger.info(`Successfully registered and enrolled user ${email} and imported it into the wallet`);
         
-        // Output the keys (used heavily by university signup to get the PK for the ledger)
+        // Output the keys
         return userKeys;
 
     } catch (error) {
