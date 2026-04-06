@@ -32,6 +32,7 @@ const studentSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
+        lowercase: true,   // AUTOMATICALLY convert "Ali@Gmail.Com" to "ali@gmail.com"
         minlength: 1,
         unique: true,      // Tells MongoDB: no two students can have the same email
         // CONCEPT — Format Validation:

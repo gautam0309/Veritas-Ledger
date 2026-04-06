@@ -35,6 +35,7 @@ const universitySchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,        // Removes whitespace (" test@x.com " -> "test@x.com")
+        lowercase: true,   // AUTOMATICALLY convert "Ali@Gmail.Com" to "ali@gmail.com"
         minlength: 1,
         unique: true,      // Tells MongoDB: no two universities can have the same email
         // CONCEPT — Custom Validation:
