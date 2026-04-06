@@ -138,6 +138,11 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
                 return createHydratedKey(privateKey, ECDSAKey, 'SEC1');
             } catch (e2) {
                 console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Raw/PKCS8/SEC1 aborted. Sample=${Buffer.from(cleanPem).toString('hex').substring(0, 20)}`);
+                if (cleanPem && cleanPem.length > 50) {
+                    console.error(`[CRYPTO-BRIDGE] 🔍 CRITICAL FORENSIC (Key Length ${cleanPem.length}):`);
+                    console.error(`[CRYPTO-BRIDGE] HEX_START: ${Buffer.from(cleanPem).toString('hex').substring(0, 64)}`);
+                    console.error(`[CRYPTO-BRIDGE] HEX_END:   ${Buffer.from(cleanPem).toString('hex').slice(-64)}`);
+                }
                 const fallbackPem = Buffer.isBuffer(cleanPem) ? cleanPem.toString('hex') : cleanPem;
                 return originalCreateKey.call(this, fallbackPem);
             }
