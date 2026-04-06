@@ -41,22 +41,40 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * Super Sanitizer: Cleans PEM strings from any DB, JSON, or formatting artifacts
+ * Identity Autodidact: Recursively cleans and autodetects key formats (JWK, SEC1, PKCS8)
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
     
-    let cleaned = pem
-        .replace(/\\n/g, '\n') // Literal \n -> actual newline
-        .replace(/\\r/g, '\r') // Literal \r -> carriage return
-        .replace(/^"|"$/g, '')  // Remove outer quotes if stringified
-        .trim();
+    let cleaned = pem.trim();
 
-    // Ensure it has valid PEM headers
+    // RECURSIVE QUOTE PEELING: Handle double-quoted or JSON-escaped strings
+    while (cleaned.startsWith('"') || cleaned.startsWith('\\"')) {
+        const start = cleaned.startsWith('"') ? 1 : 2;
+        const end = cleaned.endsWith('"') ? 1 : (cleaned.endsWith('\\"') ? 2 : 0);
+        if (end === 0) break; 
+        cleaned = cleaned.substring(start, cleaned.length - end);
+        cleaned = cleaned.trim();
+    }
+
+    // NORMALIZE NEWLINES: Handle literal escapes from databases
+    cleaned = cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+
+    // JWK DETECT: If it starts with {, it's a JSON Web Key
+    if (cleaned.startsWith('{')) {
+        try {
+            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: JWK (JSON Object)`);
+            return JSON.parse(cleaned);
+        } catch (e) {
+            console.warn(`[CRYPTO-BRIDGE] ⚠️ JWK PARSE FAILED: Trying as raw string...`);
+        }
+    }
+
+    // PEM HEADER RECOVERY: Node.js 18+ is strict about SEC1 vs PKCS#8
     if (!cleaned.includes('-----BEGIN')) {
-        console.warn(`[CRYPTO-BRIDGE] ⚠️ SANITIZER: Key missing header. Attempting recovery...`);
-        // If it looks like base64 but is missing headers, wrap it as a Private Key
-        if (/^[a-zA-Z0-9+/= \n]+$/.test(cleaned)) {
+        console.warn(`[CRYPTO-BRIDGE] ⚠️ MISSING HEADER. Applying Brute-Force Wrap...`);
+        // If it looks like base64 bits, wrap it
+        if (/^[a-zA-Z0-9+/= \n\r]+$/.test(cleaned.replace(/\s/g, ''))) {
             cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
         }
     }
@@ -74,13 +92,21 @@ function patchCryptoSuite(CryptoSuiteClass) {
     
     const originalCreateKey = CryptoSuiteClass.prototype.createKeyFromRaw;
     CryptoSuiteClass.prototype.createKeyFromRaw = function(pem) {
-        // Step 1: Force to string and SANITIZE
+        if (!pem) return originalCreateKey.call(this, pem);
+
         const rawPem = Buffer.from(pem).toString();
         const cleanPem = sanitizePem(rawPem);
 
         try {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native parse...`);
-            const privateKey = crypto.createPrivateKey(cleanPem);
+            
+            let options = cleanPem;
+            // Handle JWK Object format
+            if (typeof cleanPem === 'object' && cleanPem !== null) {
+                options = { key: cleanPem, format: 'jwk' };
+            }
+
+            const privateKey = crypto.createPrivateKey(options);
             
             const nativeKey = {
                 type: 'EC',
@@ -94,8 +120,12 @@ function patchCryptoSuite(CryptoSuiteClass) {
             console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS.`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
-            console.warn(`[CRYPTO-BRIDGE] ⚠️ NATIVE_LOAD FAILED: Falling back to original logic. Error:`, e.message);
-            // Before falling back, try one last time with the raw string
+            // DEEP TELEMETRY: Show the HEX signature if parse fails
+            const sample = rawPem.substring(0, 10);
+            const hexSample = Buffer.from(sample).toString('hex');
+            console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Err: ${e.message}`);
+            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, Sample="${sample}", Hex=${hexSample}`);
+            
             return originalCreateKey.call(this, cleanPem);
         }
     };
