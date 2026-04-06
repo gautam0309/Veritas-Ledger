@@ -41,7 +41,7 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * Identity Autodidact: Recursively cleans and autodetects key formats (Hex-DER, JWK, PEM)
+ * Universal ECDSA Wrapper: Recognizes Hex-DER, Raw D-Values, and JWK
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
@@ -60,17 +60,34 @@ function sanitizePem(pem) {
     // NORMALIZE NEWLINES: Handle literal escapes from databases
     cleaned = cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
 
-    // HEX-DER DETECT: If it's a long hex string, it's likely binary DER
-    if (/^[0-9a-fA-F\s]+$/.test(cleaned) && cleaned.length > 64) {
-        try {
-            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Length=${cleaned.length})`);
-            return Buffer.from(cleaned.replace(/\s/g, ''), 'hex');
-        } catch (e) {
-            console.warn(`[CRYPTO-BRIDGE] ⚠️ HEX DECODE FAILED: Trying as raw string...`);
+    // STRIP WHITESPACE for format detection
+    const flat = cleaned.replace(/\s/g, '');
+
+    // 1. HEX-DER / RAW HEX DETECT
+    if (/^[0-9a-fA-F]+$/.test(flat)) {
+        // CASE: Raw 32-byte D-Value (64 chars)
+        if (flat.length === 64) {
+            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Raw Hex (32-byte D-Value)`);
+            const b64url = Buffer.from(flat, 'hex')
+                .toString('base64')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+            return {
+                kty: 'EC',
+                crv: 'P-256',
+                d: b64url
+            };
+        }
+        
+        // CASE: Full Hex-encoded DER sequence (like 558 chars)
+        if (flat.length > 64) {
+            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Length=${flat.length})`);
+            return Buffer.from(flat, 'hex');
         }
     }
 
-    // JWK DETECT: If it starts with {, it's a JSON Web Key
+    // 2. JWK DETECT: If it starts with {, it's a JSON Object
     if (cleaned.startsWith('{')) {
         try {
             console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: JWK (JSON Object)`);
