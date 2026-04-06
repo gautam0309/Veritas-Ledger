@@ -59,34 +59,16 @@ async function connectToNetwork(userEmail) {
             return { fabricOffline: true };
         }
         ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
-
-        // Category 4 Fix: Ngrok Tunnel Support (Remote Fabric)
-        // If the app is running on Vercel and FABRIC_PEER_ENDPOINT is set,
-        // we dynamically replace "localhost:7051" with the tunnel address.
-        if (config.fabric.peerEndpoint && ccp.peers) {
-            Object.keys(ccp.peers).forEach(key => {
-                const oldUrl = ccp.peers[key].url;
-                ccp.peers[key].url = config.fabric.peerEndpoint;
-                logger.info(`Ngrok Bridge: Overriding Peer URL ${oldUrl} -> ${ccp.peers[key].url}`);
-            });
-        }
-        if (config.fabric.caEndpoint && ccp.certificateAuthorities) {
-            Object.keys(ccp.certificateAuthorities).forEach(key => {
-                const oldUrl = ccp.certificateAuthorities[key].url;
-                ccp.certificateAuthorities[key].url = config.fabric.caEndpoint;
-                logger.info(`Ngrok Bridge: Overriding CA URL ${oldUrl} -> ${ccp.certificateAuthorities[key].url}`);
-            });
-        }
     } catch (err) {
         logger.error(`Error reading CCP file: ${err.message}`);
         return { fabricOffline: true };
     }
 
-    // 2. Access the Custom Encrypted Wallet
-    // WHAT: Uses our Category 3 Fix to securely decrypt keys from the disk.
+    // 2. Access the Custom MongoDB Cloud Wallet
+    // WHAT: Replaces the file-based wallet for serverless (Vercel) compatibility.
     const { Gateway } = require('fabric-network');
-    const { getEncryptedWallet } = require('./encrypted-wallet');
-    let wallet = await getEncryptedWallet(config.fabric.walletPath);
+    const { getMongoWallet } = require('./mongo-wallet');
+    let wallet = await getMongoWallet();
 
     // 3. Retrieve User Identity
     // WHAT: Fetches the X.509 certificate and private key for the requested user
@@ -103,9 +85,17 @@ async function connectToNetwork(userEmail) {
     //   gRPC connections and handles transaction endorsement automatically.
     const gateway = new Gateway();
     
-    // Connect to the gateway using the CCP and the wallet identity
-    // asLocalhost: true is crucial for local development using Docker
-    await gateway.connect(ccp, { wallet, identity: userEmail, discovery: { enabled: true, asLocalhost: true } });
+    // Connect to the gateway using the CCP and the wallet identity.
+    // OPTIMIZATION: asLocalhost: false is required for remote VPS connection.
+    // OPTIMIZATION: discovery: { enabled: false } is CRITICAL for Vercel (prevents 5-7s timeout).
+    await gateway.connect(ccp, { 
+        wallet, 
+        identity: userEmail, 
+        discovery: { enabled: false, asLocalhost: false },
+        queryHandlerOptions: {
+            timeout: 3000 // 3-second timeout for queries
+        }
+    });
 
     // 5. Connect to the specific Channel and Smart Contract
     const network = await gateway.getNetwork(config.fabric.channelName);

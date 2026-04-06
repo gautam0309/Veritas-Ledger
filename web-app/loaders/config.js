@@ -87,11 +87,6 @@ module.exports = {
         channelName : process.env.FABRIC_CHANNEL_NAME,
 
         // Chaincode name (e.g., "educert")
-        chaincodeName : process.env.FABRIC_CHAINCODE_NAME,
-
-        // REMOTE TUNNEL SUPPORT (Ngrok)
-        // If these are set in Vercel, the app will use them instead of localhost
-        peerEndpoint: process.env.FABRIC_PEER_ENDPOINT,
-        caEndpoint: process.env.FABRIC_CA_ENDPOINT
+        chaincodeName : process.env.FABRIC_CHAINCODE_NAME
     }
 };

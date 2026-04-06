@@ -47,27 +47,7 @@ function getSafeCCP() {
             logger.warn(`CCP file not found at ${config.fabric.ccpPath}. Hyperledger Fabric operations will be disabled.`);
             return null;
         }
-        const ccp = JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
-
-        // Category 4 Fix: Ngrok Tunnel Support (Remote Fabric)
-        // If the app is running on Vercel and FABRIC_PEER_ENDPOINT is set,
-        // we dynamically replace "localhost:7051" with the tunnel address.
-        if (config.fabric.peerEndpoint && ccp.peers) {
-            Object.keys(ccp.peers).forEach(key => {
-                const oldUrl = ccp.peers[key].url;
-                ccp.peers[key].url = config.fabric.peerEndpoint;
-                logger.info(`Ngrok Bridge (CA): Overriding Peer URL ${oldUrl} -> ${ccp.peers[key].url}`);
-            });
-        }
-        if (config.fabric.caEndpoint && ccp.certificateAuthorities) {
-            Object.keys(ccp.certificateAuthorities).forEach(key => {
-                const oldUrl = ccp.certificateAuthorities[key].url;
-                ccp.certificateAuthorities[key].url = config.fabric.caEndpoint;
-                logger.info(`Ngrok Bridge (CA): Overriding CA URL ${oldUrl} -> ${ccp.certificateAuthorities[key].url}`);
-            });
-        }
-
-        return ccp;
+        return JSON.parse(fs.readFileSync(config.fabric.ccpPath, 'utf8'));
     } catch (err) {
         logger.error(`Error reading CCP file: ${err.message}`);
         return null;
@@ -147,7 +127,7 @@ async function registerUser(email) {
     try {
         // Setup CA client connection (same logic as enrollAdmin)
         const FabricCAServices = require('fabric-ca-client');
-        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const { getMongoWallet } = require('./mongo-wallet');
         const walletUtils = require('./wallet-utils');
 
         const ccp = getSafeCCP();
@@ -165,7 +145,7 @@ async function registerUser(email) {
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        const wallet = await getEncryptedWallet(config.fabric.walletPath);
+        const wallet = await getMongoWallet();
 
         // Check to see if we've already enrolled the user.
         // We use email as the unique identifier on the network
@@ -256,7 +236,7 @@ async function registerUser(email) {
 async function deleteUser(email) {
     try {
         const FabricCAServices = require('fabric-ca-client');
-        const { getEncryptedWallet } = require('./encrypted-wallet');
+        const { getMongoWallet } = require('./mongo-wallet');
 
         const ccp = getSafeCCP();
         if (!ccp) {
@@ -267,7 +247,7 @@ async function deleteUser(email) {
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        const wallet = await getEncryptedWallet(config.fabric.walletPath);
+        const wallet = await getMongoWallet();
 
         const adminIdentity = await wallet.get('admin');
         if (!adminIdentity) {
