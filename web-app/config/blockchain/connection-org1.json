@@ -1,0 +1,76 @@
+{
+    "name": "test-network-org1",
+    "version": "1.0.0",
+    "client": {
+        "organization": "Org1",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "channels": {
+        "mychannel": {
+            "orderers": [
+                "orderer.example.com"
+            ],
+            "peers": {
+                "peer0.org1.example.com": {
+                    "endorsingPeer": true,
+                    "chaincodeQuery": true,
+                    "ledgerQuery": true,
+                    "eventSource": true
+                }
+            }
+        }
+    },
+    "organizations": {
+        "Org1": {
+            "mspid": "Org1MSP",
+            "peers": [
+                "peer0.org1.example.com"
+            ],
+            "certificateAuthorities": [
+                "ca.org1.example.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.org1.example.com": {
+            "url": "grpcs://212.47.77.116:7051",
+            "tlsCACerts": {
+                "pem": "-----BEGIN CERTIFICATE-----\nMIICODCCAd6gAwIBAgIUV0z5UipUcn3fC03fN1pKaFI9iDIwCgYIKoZIzj0EAwIw\ncDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMQ8wDQYDVQQH\nEwZEdXJoYW0xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMjYwMzA5MDQxOTAwWhcNNDEwMzA1MDQxOTAw\nWjBwMQswCQYDVQQGEwJVUzEXMBUGA1UECBMOTm9ydGggQ2Fyb2xpbmExDzANBgNV\nBAcTBkR1cmhhbTEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEcMBoGA1UEAxMT\nY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABH8v\nwBdxD/9OU0+aGPwAl0kGiHyKr5s1anmAPbEScwNkDxZ+Jwr4wl7pTLt8Yo1q7hG3\nliy2fY/Fi7fhygG+t6KjVjBUMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\nAQH/AgEBMB0GA1UdDgQWBBQ0N23dqygxaH8jz/BYxrZLBbAKmzAPBgNVHREECDAG\nhwR/AAABMAoGCCqGSM49BAMCA0gAMEUCIQDp8wY3Lqqwi+pflOKeuBF5NbIsuTKV\n/RDKsy8recm5LgIgf28hOpUjsYZeCH1Buv3j6bzbrUR2xKbXRCQORiA69TM=\n-----END CERTIFICATE-----\n"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.org1.example.com",
+                "hostnameOverride": "peer0.org1.example.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.org1.example.com": {
+            "url": "https://212.47.77.116:7054",
+            "caName": "ca-org1",
+            "tlsCACerts": {
+                "pem": "-----BEGIN CERTIFICATE-----\nMIICODCCAd6gAwIBAgIUV0z5UipUcn3fC03fN1pKaFI9iDIwCgYIKoZIzj0EAwIw\ncDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMQ8wDQYDVQQH\nEwZEdXJoYW0xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMjYwMzA5MDQxOTAwWhcNNDEwMzA1MDQxOTAw\nWjBwMQswCQYDVQQGEwJVUzEXMBUGA1UECBMOTm9ydGggQ2Fyb2xpbmExDzANBgNV\nBAcTBkR1cmhhbTEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEcMBoGA1UEAxMT\nY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABH8v\nwBdxD/9OU0+aGPwAl0kGiHyKr5s1anmAPbEScwNkDxZ+Jwr4wl7pTLt8Yo1q7hG3\nliy2fY/Fi7fhygG+t6KjVjBUMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\nAQH/AgEBMB0GA1UdDgQWBBQ0N23dqygxaH8jz/BYxrZLBbAKmzAPBgNVHREECDAG\nhwR/AAABMAoGCCqGSM49BAMCA0gAMEUCIQDp8wY3Lqqwi+pflOKeuBF5NbIsuTKV\n/RDKsy8recm5LgIgf28hOpUjsYZeCH1Buv3j6bzbrUR2xKbXRCQORiA69TM=\n-----END CERTIFICATE-----\n"
+            },
+            "httpOptions": {
+                "verify": false
+            }
+        }
+    },
+    "orderers": {
+        "orderer.example.com": {
+            "url": "grpcs://212.47.77.116:7050",
+            "tlsCACerts": {
+                "pem": "-----BEGIN CERTIFICATE-----\nMIICGzCCAcKgAwIBAgIUfzXH6q/y9HMXYXllx6iSm2QN1pQwCgYIKoZIzj0EAwIw\nYjELMAkGA1UEBhMCVVMxETAPBgNVBAgTCE5ldyBZb3JrMREwDwYDVQQHEwhOZXcg\nWW9yazEUMBIGA1UEChMLZXhhbXBsZS5jb20xFzAVBgNVBAMTDmNhLmV4YW1wbGUu\nY29tMB4XDTI2MDMwOTA0MTkwMFoXDTQxMDMwNTA0MTkwMFowYjELMAkGA1UEBhMC\nVVMxETAPBgNVBAgTCE5ldyBZb3JrMREwDwYDVQQHEwhOZXcgWW9yazEUMBIGA1UE\nChMLZXhhbXBsZS5jb20xFzAVBgNVBAMTDmNhLmV4YW1wbGUuY29tMFkwEwYHKoZI\zj0CAQYIKoZIzj0DAQcDQgAE7GT0a1xIdgmb/uSNkawKO7z5kwxOZo3PXe99UTgc\n7PhiC4vGUx0JS3OKEdPgaPukpF0OCcyxgzbO/mt4wAurZqNW\nMFQwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwHQYDVR0OBBYE\nFHSLB6smxeKB1nxkXecUrfpcnOlHMA8GA1UdEQQIMAaHBH8AAAEwCgYIKoZIzj0E\nAwIDRwAwRAIgDpYNBBB1WG6YOrgWVV9lVkCvlATG6Xc8RY3OcfGG0BoCIC56+Llr\nGYMXZCUiiqar0ESURvr9nQV2Nx+M/bTgslX5\n-----END CERTIFICATE-----\n"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "orderer.example.com",
+                "hostnameOverride": "orderer.example.com"
+            }
+        }
+    }
+}

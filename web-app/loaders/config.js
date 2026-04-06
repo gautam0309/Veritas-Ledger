@@ -79,9 +79,13 @@ module.exports = {
             // 1. If path is valid and accessible, use it
             if (rawPath && fs.existsSync(rawPath)) return rawPath;
             
-            // 2. Fallback to a standard relative path within the repo
-            const defaultPath = path.resolve(__dirname, "../../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json");
-            if (fs.existsSync(defaultPath)) return defaultPath;
+            // 2. Fallback to the new trackable location (Safe for Vercel)
+            const fallbackPath = path.resolve(__dirname, "../config/blockchain/connection-org1.json");
+            if (fs.existsSync(fallbackPath)) return fallbackPath;
+            
+            // 3. Last resort: internal fabric-samples path
+            const legacyPath = path.resolve(__dirname, "../../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json");
+            if (fs.existsSync(legacyPath)) return legacyPath;
             
             return rawPath; // Return original if all else fails
         })(),
