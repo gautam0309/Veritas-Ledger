@@ -73,7 +73,7 @@ function sanitizePem(pem) {
 /**
  * Native Bridge: Patches the CryptoSuite_ECDSA_AES class directly to skip jsrsasign entirely
  */
-function patchCryptoSuite(CryptoSuiteClass) {
+function patchCryptoSuite(CryptoSuiteClass, registry) {
     if (!CryptoSuiteClass || !CryptoSuiteClass.prototype || CryptoSuiteClass.__antigravity_patched) return;
 
     console.log(`[CRYPTO-BRIDGE] ⚙️ SDK-LEVEL: Found CryptoSuite_ECDSA_AES. Applying Native Bridge...`);
@@ -84,6 +84,9 @@ function patchCryptoSuite(CryptoSuiteClass) {
 
         const rawPem = Buffer.from(pem).toString();
         const cleanPem = sanitizePem(rawPem);
+
+        // Dependency Resolution: Use captured ECDSAKey if available, otherwise try relative
+        const ECDSAKey = registry.ECDSAKey || require('./ecdsa/key.js');
 
         try {
             console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native pkcs8...`);
@@ -98,7 +101,6 @@ function patchCryptoSuite(CryptoSuiteClass) {
                 __isNative: true
             };
             
-            const ECDSAKey = require('./ecdsa/key.js');
             console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (PKCS#8).`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
@@ -115,7 +117,6 @@ function patchCryptoSuite(CryptoSuiteClass) {
                     __isNative: true
                 };
                 
-                const ECDSAKey = require('./ecdsa/key.js');
                 console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (SEC1).`);
                 return new ECDSAKey(nativeKey);
             } catch (e2) {
@@ -157,11 +158,19 @@ function patchCryptoSuite(CryptoSuiteClass) {
     console.log(`[CRYPTO-BRIDGE] ✅ SDK-LEVEL: Native Bridge ACTIVE.`);
 }
 
+// Registry to capture internal Fabric SDK classes that might be moved or flattened by bundlers (Vercel)
+const registry = { ECDSAKey: null };
+
 /**
  * Universal Interceptor
  */
 Module.prototype.require = function(request) {
     const result = originalRequire.apply(this, arguments);
+
+    // 0. CAPTURE: Internal Fabric SDK dependencies to share with the bridge
+    if (request.endsWith('ecdsa/key.js')) {
+        registry.ECDSAKey = result;
+    }
 
     // 1. Catch jsrsasign (Legacy/Nested)
     if (result && result.KEYUTIL) {
@@ -170,7 +179,7 @@ Module.prototype.require = function(request) {
 
     // 2. Catch the Fabric SDK CryptoSuite itself
     if (request.endsWith('CryptoSuite_ECDSA_AES.js') || (result && result.name === 'CryptoSuite_ECDSA_AES')) {
-        patchCryptoSuite(result);
+        patchCryptoSuite(result, registry);
     }
 
     return result;

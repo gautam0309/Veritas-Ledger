@@ -101,9 +101,10 @@ module.exports = {
         walletPath: require('path').resolve(__dirname, "..", "wallet"),
 
         // Fabric channel name (e.g., "mychannel")
-        channelName : process.env.FABRIC_CHANNEL_NAME,
+        // Category 4 Fix: Add robust defaults for Cloud/Vercel environments
+        channelName : process.env.FABRIC_CHANNEL_NAME || process.env.CHANNEL_NAME || 'mychannel',
 
         // Chaincode name (e.g., "educert")
-        chaincodeName : process.env.FABRIC_CHAINCODE_NAME
+        chaincodeName : process.env.FABRIC_CHAINCODE_NAME || process.env.CHAINCODE_NAME || 'blockchaincertificate'
     }
 };
