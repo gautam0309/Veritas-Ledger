@@ -41,7 +41,7 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * SEC1 Auto-Healer: Recursively cleans, extracts Hex, and heals malformed headers
+ * Adaptive Sanitizer: Neutralizes database encoding artifacts and restores format.
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
@@ -57,63 +57,16 @@ function sanitizePem(pem) {
         cleaned = cleaned.trim();
     }
 
-    // If it has headers, just normalize newlines and return
-    if (cleaned.includes('-----BEGIN')) {
-        return cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+    // Normalized newlines
+    cleaned = cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+
+    // If it's a raw hex key (558 chars or more of hex), convert to buffer
+    // WHY: Modern Node crypto prefers buffers for DER-formatted keys.
+    if (/^[0-9a-fA-F:\-]+$/.test(cleaned) && cleaned.length > 61) {
+         const hexData = cleaned.replace(/[:\-]/g, '');
+         return Buffer.from(hexData, 'hex');
     }
 
-    // HEX GRINDER: If no header, extract ONLY valid hex digits (0-9, a-f)
-    const grinder = cleaned.replace(/[^0-9a-fA-F]/g, '');
-
-    // 1. BINARY HEALER & forensic PKCS#8 RESTORATION
-    if (grinder.length > 61) {
-        let buf = Buffer.from(grinder, 'hex');
-        
-        // CASE: Header-less Binary SEC1/PKCS8 (Does not start with 0x30 SEQUENCE)
-        if (buf[0] !== 0x30) {
-            // SCENARIO A: Truncated PKCS#8 Sequence (Forensic Restore for 270+ byte blobs)
-            if (buf.length > 200) {
-                console.log(`[CRYPTO-BRIDGE] ⚙️ TRUNCATED PKCS#8 DETECTED (${buf.length} bytes). Restoring OID Sequence tags...`);
-                // Restore the missing "30 82 01 13" (Sequence + Length) header from VPS data
-                return Buffer.concat([Buffer.from('30820113', 'hex'), buf]);
-            }
-
-            // SCENARIO B: Raw 32-byte Private Key Bits (Deep Reconstruct)
-            console.log(`[CRYPTO-BRIDGE] ⚙️ RAW SEC1 DETECTED. Reconstructing PKCS#8 Envelope...`);
-            const d_bytes = buf.slice(0, 32);
-            const p256Pkcs8Header = Buffer.from([
-                0x30, 0x41, 0x02, 0x01, 0x00, 0x30, 0x13, 
-                0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 
-                0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 
-                0x04, 0x27, 0x30, 0x25, 0x02, 0x01, 0x01, 0x04, 0x20
-            ]);
-            return Buffer.concat([p256Pkcs8Header, d_bytes]);
-        }
-        
-        // CASE: Full Hex-encoded DER sequence (Starting with 0x30)
-        console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Grinder Success: ${grinder.length} chars)`);
-        return buf;
-    }
-
-    // 2. JWK DETECT: If it looks like JSON after peeling
-    if (cleaned.startsWith('{')) {
-        try {
-            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: JWK (JSON Object)`);
-            return JSON.parse(cleaned);
-        } catch (e) {
-            console.warn(`[CRYPTO-BRIDGE] ⚠️ JWK PARSE FAILED: Trying as raw string...`);
-        }
-    }
-
-    // PEM HEADER RECOVERY: Node.js 18+ is strict about SEC1 vs PKCS#8
-    if (!cleaned.includes('-----BEGIN')) {
-        console.warn(`[CRYPTO-BRIDGE] ⚠️ MISSING HEADER. Applying Brute-Force Wrap...`);
-        // If it looks like base64 bits, wrap it
-        if (/^[a-zA-Z0-9+/= \n\r]+$/.test(cleaned.replace(/\s/g, ''))) {
-            cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
-        }
-    }
-    
     return cleaned;
 }
 
@@ -133,11 +86,7 @@ function patchCryptoSuite(CryptoSuiteClass) {
         const cleanPem = sanitizePem(rawPem);
 
         try {
-            console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native parse...`);
-            
-            // The Cloak already provides a String (PEM) or Buffer (DER).
-            // Pass it directly to ensure universal compatibility with all Node versions.
-            // If it's a buffer, we explicitly tell Node it's a DER-formatted PKCS#8 key.
+            console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native pkcs8...`);
             const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'pkcs8' } : cleanPem;
             const privateKey = crypto.createPrivateKey(options);
             
@@ -150,15 +99,36 @@ function patchCryptoSuite(CryptoSuiteClass) {
             };
             
             const ECDSAKey = require('./ecdsa/key.js');
-            console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS.`);
+            console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (PKCS#8).`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
-            // DEEP TELEMETRY: Show the ACTUAL binary hex of the buffer if parse fails
-            const binaryHex = cleanPem instanceof Buffer ? cleanPem.toString('hex').substring(0, 40) : "not-a-buffer";
-            console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Err: ${e.message}`);
-            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, BinaryHex=${binaryHex}`);
-            
-            return originalCreateKey.call(this, cleanPem);
+            try {
+                console.log(`[CRYPTO-BRIDGE] ⚙️ SEC1 Fallback: Trying native sec1...`);
+                const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'sec1' } : cleanPem;
+                const privateKey = crypto.createPrivateKey(options);
+                
+                const nativeKey = {
+                    type: 'EC',
+                    prvKeyHex: '',
+                    ecparams: { name: this._curveName || 'secp256r1' },
+                    __nativeKey: privateKey,
+                    __isNative: true
+                };
+                
+                const ECDSAKey = require('./ecdsa/key.js');
+                console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (SEC1).`);
+                return new ECDSAKey(nativeKey);
+            } catch (e2) {
+                console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! PKCS8: ${e.message}, SEC1: ${e2.message}`);
+                
+                // FORENSIC TELEMETRY: Show the FIRST 10 BYTES of the payload to reveal binary structure
+                const sampleHex = Buffer.from(cleanPem).toString('hex').substring(0, 20);
+                console.error(`[CRYPTO-BRIDGE] 🔍 Forensic Telemetry: Sample="${sampleHex}", Length=${cleanPem.length}`);
+                
+                // BUFFER SAFETY: If native loader fails, conversion to string prevents jsrsasign crash
+                const fallbackPem = Buffer.isBuffer(cleanPem) ? cleanPem.toString('hex') : cleanPem;
+                return originalCreateKey.call(this, fallbackPem);
+            }
         }
     };
 

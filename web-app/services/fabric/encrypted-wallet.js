@@ -56,29 +56,42 @@ function encrypt(text) {
 /*
  * ===== FUNCTION: decrypt =====
  * WHAT: Reverses the encryption process. Parses the custom format and decrypts.
+ * MODIFICATION (Phase 24): RECURSIVE DECRYPTION. 
+ * If a key was double-encrypted, it continues "peeling" until the raw key is reached.
  */
 function decrypt(text) {
-    if (!text) return text;
-    // Check if it's actually encrypted with our scheme (splits by colon)
-    let textParts = text.split(':');
-    if (textParts.length !== 3) return text; // Probably unencrypted legacy key (backwards compatible)
-
-    try {
-        let iv = Buffer.from(textParts[0], 'hex');
-        let authTag = Buffer.from(textParts[1], 'hex');
-        let encryptedText = Buffer.from(textParts[2], 'hex');
-        
-        let decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
-        // We set the Auth Tag to prove the ciphertext wasn't altered
-        decipher.setAuthTag(authTag);
-        
-        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        return decrypted;
-    } catch (e) {
-        // Fallback if decryption fails (e.g., plain text that happens to have colons)
-        return text; 
+    if (!text || typeof text !== 'string') return text;
+    
+    let current = text;
+    let layers = 0;
+    
+    // Recursive Peeling Loop: continue as long as it looks like iv:tag:ciphertext
+    while (current.split(':').length === 3 && layers < 5) {
+        let textParts = current.split(':');
+        try {
+            let iv = Buffer.from(textParts[0], 'hex');
+            let authTag = Buffer.from(textParts[1], 'hex');
+            let encryptedText = Buffer.from(textParts[2], 'hex');
+            
+            let decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+            decipher.setAuthTag(authTag);
+            
+            let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            
+            current = decrypted;
+            layers++;
+        } catch (e) {
+            // Stop peeling if a layer can't be decrypted (e.g. invalid tag)
+            break; 
+        }
     }
+    
+    if (layers > 1) {
+        console.log(`[CRYPTO-WALLET] ✅ Recursive decryption handled ${layers} layers.`);
+    }
+    
+    return current;
 }
 
 /**

@@ -22,6 +22,7 @@ class MongoWalletStore {
      */
     async get(label) {
         try {
+            await ensureConnected();
             const result = await FabricIdentity.findOne({ label });
             if (!result) return undefined;
 
@@ -29,15 +30,23 @@ class MongoWalletStore {
             const identity = JSON.parse(result.identity);
 
             // Decrypt the private key before returning to the Fabric SDK
+            // WHY (Phase 22): Student identities in MongoDB Atlas are GCM-encrypted (iv:tag:data).
+            // We use the 'decrypt' function from encrypted-wallet.js which supports this format.
             if (identity && identity.credentials && identity.credentials.privateKey) {
                 const decryptedKey = decrypt(identity.credentials.privateKey);
+                
                 // SUPER SANITIZATION: Remove any database encoding artifacts
-                // This is critical for compatibility with Node native crypto logic
+                // This ensures the key is clean for the Node.js native crypto engine.
                 identity.credentials.privateKey = decryptedKey
-                    .replace(/\\n/g, '\n') // Literal \n -> actual newline
+                    .replace(/\\n/g, '\n') 
                     .replace(/\\r/g, '\r') 
-                    .replace(/^"|"$/g, '')  // Remove outer quotes if stringified
+                    .replace(/^"|"$/g, '') 
                     .trim();
+                
+                // Telemetry for the Native Bridge
+                if (identity.credentials.privateKey.includes(':')) {
+                    logger.error(`[MONGO-WALLET] ❌ Decryption failed for ${label}. Format mismatch or wrong secret.`);
+                }
             }
 
             return Buffer.from(JSON.stringify(identity));
