@@ -36,9 +36,9 @@ const logger = require('../logger');
  *   key on the blockchain and display the private key to the user once.
  */
 async function createNewWalletEntity(enrollmentObject, userName) {
-    // Access the encrypted wallet storage (Category 3 Security Fix)
-    const { getEncryptedWallet } = require('./encrypted-wallet');
-    const wallet = await getEncryptedWallet(config.fabric.walletPath);
+    // Access the MongoDB-backed wallet (works on both local and Vercel)
+    const { getMongoWallet } = require('./mongo-wallet');
+    const wallet = await getMongoWallet();
 
     // Parse the enrollment data into an X.509 Identity format
     // WHAT: X.509 is the standard format for public key certificates used on the web.
@@ -56,13 +56,12 @@ async function createNewWalletEntity(enrollmentObject, userName) {
     // WHY: We need the hex public key to save on the blockchain for ABAC,
     //   and we need the hex private key to show the user upon registration.
     let hexKeyEntity = {
-        publicKey: enrollmentObject.key._key.pubKeyHex,
-        privateKey: enrollmentObject.key._key.prvKeyHex,
+        publicKey: enrollmentObject.key._key.pubKeyHex || '',
+        privateKey: enrollmentObject.key._key.prvKeyHex || '',
         userName: userName
     };
 
-    // Store the formatted identity structure into the file system wallet
-    // (This automatically hits the encrypt() function in encrypted-wallet.js)
+    // Store the formatted identity structure into MongoDB wallet
     await wallet.put(userName, x509Identity);
 
     // Return the hex representations back to the caller
