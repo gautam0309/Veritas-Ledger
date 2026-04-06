@@ -30,7 +30,10 @@ class MongoWalletStore {
 
             // Decrypt the private key before returning to the Fabric SDK
             if (identity && identity.credentials && identity.credentials.privateKey) {
-                identity.credentials.privateKey = decrypt(identity.credentials.privateKey);
+                const decryptedKey = decrypt(identity.credentials.privateKey);
+                // Sanitization: Remove hidden whitespace and fix potentially escaped newlines
+                // This is critical for compatibility with Node 18+ crypto logic
+                identity.credentials.privateKey = decryptedKey.trim().replace(/\\n/g, '\n');
             }
 
             return Buffer.from(JSON.stringify(identity));
