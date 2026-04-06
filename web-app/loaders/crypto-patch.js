@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- * FILE: web-app/loaders/crypto-patch.js - GLOBAL INTERCEPTOR VERSION
+ * FILE: web-app/loaders/crypto-patch.js - FULL-SPECTRUM INTERCEPTOR VERSION
  * ============================================================================
  */
 
@@ -13,7 +13,8 @@ const originalRequire = Module.prototype.require;
 /**
  * Patch function for a specific jsrsasign instance
  */
-function patchJsrsasign(jsrsasign) {
+function patchJsrsasign(jsrsasign, source) {
+    // CONTENT-AWARE CHECK: If it has KEYUTIL, it's our target library
     if (!jsrsasign || !jsrsasign.KEYUTIL || jsrsasign.__antigravity_patched) return;
 
     const originalGetKey = jsrsasign.KEYUTIL.getKey;
@@ -25,7 +26,7 @@ function patchJsrsasign(jsrsasign) {
         } catch (e) {
             // If it fails with the Node 18+ crypto incompatibility error
             if (typeof param === 'string' && param.includes('-----BEGIN')) {
-                console.log(`[CRYPTO-PATCH] 🛡️ INTERCEPTED: Intercepting PEM parsing failure. Falling back to native crypto.`);
+                console.log(`[CRYPTO-PATCH] 🛡️ INTERCEPTED: Intercepting PEM parsing failure from ${source || 'unknown'}. Falling back to native crypto.`);
                 try {
                     // Use modern Node's native crypto to re-hydrate the PEM
                     const privateKey = crypto.createPrivateKey(param);
@@ -43,21 +44,22 @@ function patchJsrsasign(jsrsasign) {
     };
 
     jsrsasign.__antigravity_patched = true;
-    console.log(`[CRYPTO-PATCH] ✅ SUCCESS: Global patch applied to a jsrsasign instance.`);
+    console.log(`[CRYPTO-PATCH] ✅ SUCCESS: Full-Spectrum patch applied to a jsrsasign/KEYUTIL instance from: ${source || 'unknown'}.`);
 }
 
 /**
- * Global Interceptor: Catch EVERY attempt to require jsrsasign
+ * Full-Spectrum Interceptor: Inspect EVERY module request
  */
 Module.prototype.require = function(request) {
     const result = originalRequire.apply(this, arguments);
 
-    // Resolve if this is a jsrsasign request (root or nested)
-    if (request === 'jsrsasign' || request.endsWith('/jsrsasign')) {
-        patchJsrsasign(result);
+    // CONTENT-AWARE DETECTION: Intercept any object that looks like jsrsasign
+    // regardless of what name or path it was loaded from (Vercel-proof).
+    if (result && result.KEYUTIL) {
+        patchJsrsasign(result, request);
     }
 
     return result;
 };
 
-console.log('🚀 [CRYPTO-PATCH] Global Module Interceptor ACTIVE for Node.js ' + process.version);
+console.log('🚀 [CRYPTO-PATCH] Full-Spectrum Global Interceptor ACTIVE for Node.js ' + process.version);
