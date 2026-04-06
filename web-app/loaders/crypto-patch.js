@@ -41,7 +41,7 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
- * Universal ECDSA Wrapper: Recognizes Hex-DER, Raw D-Values, and JWK
+ * Hex Grinder: Recursively cleans and extracts ONLY hex characters if missing headers
  */
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
@@ -57,18 +57,21 @@ function sanitizePem(pem) {
         cleaned = cleaned.trim();
     }
 
-    // NORMALIZE NEWLINES: Handle literal escapes from databases
-    cleaned = cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+    // If it has headers, just normalize newlines and return
+    if (cleaned.includes('-----BEGIN')) {
+        return cleaned.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+    }
 
-    // STRIP WHITESPACE for format detection
-    const flat = cleaned.replace(/\s/g, '');
+    // HEX GRINDER: If no header, extract ONLY valid hex digits (0-9, a-f)
+    // This obliterates any hidden BOMs, null bytes, or literal escapes
+    const grinder = cleaned.replace(/[^0-9a-fA-F]/g, '');
 
-    // 1. HEX-DER / RAW HEX DETECT
-    if (/^[0-9a-fA-F]+$/.test(flat)) {
-        // CASE: Raw 32-byte D-Value (64 chars)
-        if (flat.length === 64) {
+    // 1. RAW HEX DETECT (D-Value or full DER)
+    if (grinder.length > 61) { // 32 bytes (64 chars) +/- common header artifacts
+        // CASE: Exact 32-byte D-Value
+        if (grinder.length === 64) {
             console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Raw Hex (32-byte D-Value)`);
-            const b64url = Buffer.from(flat, 'hex')
+            const b64url = Buffer.from(grinder, 'hex')
                 .toString('base64')
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')
@@ -80,14 +83,14 @@ function sanitizePem(pem) {
             };
         }
         
-        // CASE: Full Hex-encoded DER sequence (like 558 chars)
-        if (flat.length > 64) {
-            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Length=${flat.length})`);
-            return Buffer.from(flat, 'hex');
+        // CASE: Hex-encoded DER sequence (like 558 chars)
+        if (grinder.length > 64) {
+            console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: Hex-encoded DER (Grinder Success: ${grinder.length} chars)`);
+            return Buffer.from(grinder, 'hex');
         }
     }
 
-    // 2. JWK DETECT: If it starts with {, it's a JSON Object
+    // 2. JWK DETECT: If it looks like JSON after peeling
     if (cleaned.startsWith('{')) {
         try {
             console.log(`[CRYPTO-BRIDGE] ✅ FORMAT DETECTED: JWK (JSON Object)`);
@@ -153,11 +156,11 @@ function patchCryptoSuite(CryptoSuiteClass) {
             console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS.`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
-            // DEEP TELEMETRY: Show the HEX signature if parse fails
-            const sample = rawPem.substring(0, 10);
+            // DEEP TELEMETRY: Show more HEX signature if parse fails
+            const sample = rawPem.substring(0, 20);
             const hexSample = Buffer.from(sample).toString('hex');
             console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! Err: ${e.message}`);
-            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, Sample="${sample}", Hex=${hexSample}`);
+            console.error(`[CRYPTO-BRIDGE] 🔍 Telemetry: Length=${rawPem.length}, HexSample=${hexSample}`);
             
             return originalCreateKey.call(this, cleanPem);
         }
