@@ -202,39 +202,36 @@ async function invokeChaincode(func, args, isQuery, userEmail, retryCount = 0) {
         }
 
     } catch (error) {
+        // Detailed gRPC and Connection Logging for Cloud Diagnosis
+        logger.error(`CHAINCODE ERROR [${func}]: ${error.message}`);
+        if (error.stack) logger.error(error.stack);
+
         // Category 2 Fix: Handle MVCC_READ_CONFLICT (Error 10/14) and retry
-        // CONCEPT — MVCC (Multi-Version Concurrency Control):
-        //   If two transactions try to modify the EXACT SAME piece of data at the EXACT SAME TIME,
-        //   Fabric protects data integrity by blocking the second one with an MVCC conflict.
-        // HOW WE FIX IT: We wait a few milliseconds (exponential backoff) and automatically try again.
         const isMvccConflict = error.message && (error.message.includes('MVCC_READ_CONFLICT') || error.message.includes('Phantom read conflict'));
 
         if (isMvccConflict && retryCount < MAX_RETRIES) {
             logger.warn(`MVCC read conflict detected for ${func}. Retrying in ${Math.pow(2, retryCount) * 100}ms... (Attempt ${retryCount + 1})`);
-            
-            // Wait: 100ms, then 200ms, then 400ms...
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
-            
-            // Recursive call to try again
             return invokeChaincode(func, args, isQuery, userEmail, retryCount + 1);
         }
 
         // Category 4 Fix: Circuit Breaker for Offline Fabric
-        // WHAT: Detect if the error is a connection failure (e.g., Docker down, incorrect Ngrok URL)
         const isConnectionError = error.message && (
             error.message.includes('Connect Failed') || 
             error.message.includes('No peers found') ||
             error.message.includes('failed to connect') ||
             error.message.includes('DiscoveryService') ||
-            error.message.includes('ECONNREFUSED')
+            error.message.includes('ECONNREFUSED') ||
+            error.message.includes('14 UNAVAILABLE') ||
+            error.message.includes('HANDSHAKE_FAILURE')
         );
 
         if (isConnectionError) {
-            logger.error(`FABRIC OFFLINE: Blockchain network unreachable. Returning offline status.`);
+            logger.error(`FABRIC OFFLINE: Blockchain network unreachable for func ${func}. Error: ${error.message}`);
             return { fabricOffline: true, error: error.message };
         }
 
-        logger.error(`Failed to submit transaction: ${error.message || error}`);
+        logger.error(`Failed to execute chaincode: ${error.message || error}`);
         throw error;
     }
 }

@@ -70,8 +70,21 @@ module.exports = {
     // Hyperledger Fabric configuration — everything the SDK needs to connect
     fabric: {
         // Path to the Connection Profile (CCP) JSON file
-        // The CCP tells the SDK where to find peers, orderers, and CAs
-        ccpPath: process.env.CCP_PATH,
+        // Category 4 Fix: Add path resolution fallback for Vercel/Cloud environments
+        ccpPath: (function() {
+            const rawPath = process.env.CCP_PATH;
+            const path = require('path');
+            const fs = require('fs');
+            
+            // 1. If path is valid and accessible, use it
+            if (rawPath && fs.existsSync(rawPath)) return rawPath;
+            
+            // 2. Fallback to a standard relative path within the repo
+            const defaultPath = path.resolve(__dirname, "../../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json");
+            if (fs.existsSync(defaultPath)) return defaultPath;
+            
+            return rawPath; // Return original if all else fails
+        })(),
 
         // Absolute path to the wallet directory where Fabric identities are stored
         // CONCEPT — require('path').resolve():
