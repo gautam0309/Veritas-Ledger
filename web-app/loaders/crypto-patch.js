@@ -65,33 +65,28 @@ function sanitizePem(pem) {
     // HEX GRINDER: If no header, extract ONLY valid hex digits (0-9, a-f)
     const grinder = cleaned.replace(/[^0-9a-fA-F]/g, '');
 
-    // 1. BINARY HEALER & PKCS#8 RECONSTRUCTOR
+    // 1. BINARY HEALER & forensic PKCS#8 RESTORATION
     if (grinder.length > 61) {
         let buf = Buffer.from(grinder, 'hex');
         
-        // CASE: Header-less Binary SEC1 (Does not start with 0x30 SEQUENCE)
-        // This is the smoking gun from Phase 18 telemetry!
+        // CASE: Header-less Binary SEC1/PKCS8 (Does not start with 0x30 SEQUENCE)
         if (buf[0] !== 0x30) {
-            console.log(`[CRYPTO-BRIDGE] ⚙️ HEADER-LESS SEC1 DETECTED. Reconstructing PKCS#8 Envelope...`);
-            
-            // Extract the 32-byte D-value (Private Bits)
-            const d_bytes = buf.slice(0, 32);
-            
-            // PROGRAMMATIC PKCS#8 DER HEADER FOR P-256 (prime256v1)
-            // Identifies the version, curve, and start of the private key octets
-            const p256Pkcs8Header = Buffer.from([
-                0x30, 0x41, // SEQUENCE (Len 65. Adjusting for 32-byte key + internal overhead)
-                0x02, 0x01, 0x00, // Version 0
-                0x30, 0x13, // OID Sequence
-                0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID: id-ecPublicKey
-                0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID: prime256v1
-                0x04, 0x27, // OCTET STRING (Private bits + SEC1 wrap)
-                0x30, 0x25, // SEC1 SEQUENCE
-                0x02, 0x01, 0x01, // Version 1
-                0x04, 0x20  // Private Key Octets (32 bytes)
-            ]);
+            // SCENARIO A: Truncated PKCS#8 Sequence (Forensic Restore for 270+ byte blobs)
+            if (buf.length > 200) {
+                console.log(`[CRYPTO-BRIDGE] ⚙️ TRUNCATED PKCS#8 DETECTED (${buf.length} bytes). Restoring OID Sequence tags...`);
+                // Restore the missing "30 82 01 13" (Sequence + Length) header from VPS data
+                return Buffer.concat([Buffer.from('30820113', 'hex'), buf]);
+            }
 
-            // Concatenate the header and the raw key bits
+            // SCENARIO B: Raw 32-byte Private Key Bits (Deep Reconstruct)
+            console.log(`[CRYPTO-BRIDGE] ⚙️ RAW SEC1 DETECTED. Reconstructing PKCS#8 Envelope...`);
+            const d_bytes = buf.slice(0, 32);
+            const p256Pkcs8Header = Buffer.from([
+                0x30, 0x41, 0x02, 0x01, 0x00, 0x30, 0x13, 
+                0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 
+                0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 
+                0x04, 0x27, 0x30, 0x25, 0x02, 0x01, 0x01, 0x04, 0x20
+            ]);
             return Buffer.concat([p256Pkcs8Header, d_bytes]);
         }
         
@@ -142,7 +137,9 @@ function patchCryptoSuite(CryptoSuiteClass) {
             
             // The Cloak already provides a String (PEM) or Buffer (DER).
             // Pass it directly to ensure universal compatibility with all Node versions.
-            const privateKey = crypto.createPrivateKey(cleanPem);
+            // If it's a buffer, we explicitly tell Node it's a DER-formatted PKCS#8 key.
+            const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'pkcs8' } : cleanPem;
+            const privateKey = crypto.createPrivateKey(options);
             
             const nativeKey = {
                 type: 'EC',
