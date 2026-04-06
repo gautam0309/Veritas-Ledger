@@ -130,6 +130,7 @@ async function registerUser(email) {
         const { getEncryptedWallet } = require('./encrypted-wallet');
         const walletUtils = require('./wallet-utils');
 
+        const ccp = getSafeCCP();
         if (!ccp) {
             logger.error('Cannot register user: CCP not found. Generating mock identity.');
             // WHAT: Mock identity for Vercel/Cloud environments
