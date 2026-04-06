@@ -41,6 +41,30 @@ function patchJsrsasign(jsrsasign, source) {
 }
 
 /**
+ * Super Sanitizer: Cleans PEM strings from any DB, JSON, or formatting artifacts
+ */
+function sanitizePem(pem) {
+    if (typeof pem !== 'string') return pem;
+    
+    let cleaned = pem
+        .replace(/\\n/g, '\n') // Literal \n -> actual newline
+        .replace(/\\r/g, '\r') // Literal \r -> carriage return
+        .replace(/^"|"$/g, '')  // Remove outer quotes if stringified
+        .trim();
+
+    // Ensure it has valid PEM headers
+    if (!cleaned.includes('-----BEGIN')) {
+        console.warn(`[CRYPTO-BRIDGE] ⚠️ SANITIZER: Key missing header. Attempting recovery...`);
+        // If it looks like base64 but is missing headers, wrap it as a Private Key
+        if (/^[a-zA-Z0-9+/= \n]+$/.test(cleaned)) {
+            cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
+        }
+    }
+    
+    return cleaned;
+}
+
+/**
  * Native Bridge: Patches the CryptoSuite_ECDSA_AES class directly to skip jsrsasign entirely
  */
 function patchCryptoSuite(CryptoSuiteClass) {
@@ -48,30 +72,31 @@ function patchCryptoSuite(CryptoSuiteClass) {
 
     console.log(`[CRYPTO-BRIDGE] ⚙️ SDK-LEVEL: Found CryptoSuite_ECDSA_AES. Applying Native Bridge...`);
     
-    // Override createKeyFromRaw to use Node native crypto
     const originalCreateKey = CryptoSuiteClass.prototype.createKeyFromRaw;
     CryptoSuiteClass.prototype.createKeyFromRaw = function(pem) {
-        const pemString = Buffer.from(pem).toString();
+        // Step 1: Force to string and SANITIZE
+        const rawPem = Buffer.from(pem).toString();
+        const cleanPem = sanitizePem(rawPem);
+
         try {
-            console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Intercepting createKeyFromRaw...`);
-            const privateKey = crypto.createPrivateKey(pemString);
+            console.log(`[CRYPTO-BRIDGE] 🛠️ NATIVE_LOAD: Attempting native parse...`);
+            const privateKey = crypto.createPrivateKey(cleanPem);
             
-            // Build a "Mock" key object that looks like what ECDSAKey expects
-            // but is backed by a native Node key.
             const nativeKey = {
                 type: 'EC',
-                prvKeyHex: '', // Not needed for our patched sign()
+                prvKeyHex: '',
                 ecparams: { name: this._curveName || 'secp256r1' },
                 __nativeKey: privateKey,
                 __isNative: true
             };
             
-            // Still wrap it in their ECDSAKey so types match
             const ECDSAKey = require('./ecdsa/key.js');
+            console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS.`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
-            console.warn(`[CRYPTO-BRIDGE] ⚠️ NATIVE_LOAD FAILED: Falling back to original logic.`, e.message);
-            return originalCreateKey.apply(this, arguments);
+            console.warn(`[CRYPTO-BRIDGE] ⚠️ NATIVE_LOAD FAILED: Falling back to original logic. Error:`, e.message);
+            // Before falling back, try one last time with the raw string
+            return originalCreateKey.call(this, cleanPem);
         }
     };
 

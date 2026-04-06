@@ -31,9 +31,13 @@ class MongoWalletStore {
             // Decrypt the private key before returning to the Fabric SDK
             if (identity && identity.credentials && identity.credentials.privateKey) {
                 const decryptedKey = decrypt(identity.credentials.privateKey);
-                // Sanitization: Remove hidden whitespace and fix potentially escaped newlines
-                // This is critical for compatibility with Node 18+ crypto logic
-                identity.credentials.privateKey = decryptedKey.trim().replace(/\\n/g, '\n');
+                // SUPER SANITIZATION: Remove any database encoding artifacts
+                // This is critical for compatibility with Node native crypto logic
+                identity.credentials.privateKey = decryptedKey
+                    .replace(/\\n/g, '\n') // Literal \n -> actual newline
+                    .replace(/\\r/g, '\r') 
+                    .replace(/^"|"$/g, '')  // Remove outer quotes if stringified
+                    .trim();
             }
 
             return Buffer.from(JSON.stringify(identity));
