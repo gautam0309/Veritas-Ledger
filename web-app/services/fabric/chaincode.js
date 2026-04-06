@@ -88,14 +88,21 @@ async function connectToNetwork(userEmail) {
     // Connect to the gateway using the CCP and the wallet identity.
     // OPTIMIZATION: asLocalhost: false is required for remote VPS connection.
     // OPTIMIZATION: discovery: { enabled: false } is CRITICAL for Vercel (prevents 5-7s timeout).
+    // TUNING: Increasing gRPC deadline and adding keep-alives for Vercel-to-VPS tunnel stability.
     await gateway.connect(ccp, { 
         wallet, 
         identity: userEmail, 
         discovery: { enabled: false, asLocalhost: false },
         queryHandlerOptions: {
             strategy: require('fabric-network').DefaultQueryHandlerStrategies.MSPID_SCOPE_SINGLE,
-            timeout: 10000 // 10-second timeout for cloud-to-VPS latency
-        }
+            timeout: 15000 // Increased from 10s to 15s for cloud-to-VPS latency
+        },
+        'grpc.keepalive_time_ms': 120000,
+        'grpc.keepalive_timeout_ms': 20000,
+        'grpc.keepalive_permit_without_calls': 1,
+        'grpc-js.default_authority': 'peer0.org1.example.com',
+        'grpc.initial_reconnect_backoff_ms': 1000,
+        'grpc.max_reconnect_backoff_ms': 5000
     });
 
     // 5. Connect to the specific Channel and Smart Contract

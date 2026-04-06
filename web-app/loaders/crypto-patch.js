@@ -93,15 +93,24 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
             const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'pkcs8' } : cleanPem;
             const privateKey = crypto.createPrivateKey(options);
             
+            // HYDRATION: Extract the Public Key Point (X, Y) to satisfy Fabric SDK's pubKeyHex requirement
+            const publicKey = crypto.createPublicKey(privateKey);
+            const jwk = publicKey.export({ format: 'jwk' });
+            const x = Buffer.from(jwk.x, 'base64url');
+            const y = Buffer.from(jwk.y, 'base64url');
+            const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
+
             const nativeKey = {
                 type: 'EC',
+                pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
                 prvKeyHex: '',
-                ecparams: { name: this._curveName || 'secp256r1' },
+                ecparams: { name: this._curveName || 'secp256r1', keylen: 256 },
+                getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
                 __nativeKey: privateKey,
                 __isNative: true
             };
             
-            console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (PKCS#8).`);
+            console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (PKCS#8). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
             return new ECDSAKey(nativeKey);
         } catch (e) {
             try {
@@ -109,15 +118,24 @@ function patchCryptoSuite(CryptoSuiteClass, registry) {
                 const options = Buffer.isBuffer(cleanPem) ? { key: cleanPem, format: 'der', type: 'sec1' } : cleanPem;
                 const privateKey = crypto.createPrivateKey(options);
                 
+                // HYDRATION: Extract the Public Key Point (X, Y) to satisfy Fabric SDK's pubKeyHex requirement
+                const publicKey = crypto.createPublicKey(privateKey);
+                const jwk = publicKey.export({ format: 'jwk' });
+                const x = Buffer.from(jwk.x, 'base64url');
+                const y = Buffer.from(jwk.y, 'base64url');
+                const pubKeyHex = Buffer.concat([Buffer.from([0x04]), x, y]).toString('hex');
+
                 const nativeKey = {
                     type: 'EC',
+                    pubKeyHex: pubKeyHex, // CRITICAL: Satisfies ECDSA_KEY constructor line 39
                     prvKeyHex: '',
-                    ecparams: { name: this._curveName || 'secp256r1' },
+                    ecparams: { name: this._curveName || 'secp256r1', keylen: 256 },
+                    getPublicKeyXYHex: () => ({ x: x.toString('hex'), y: y.toString('hex') }),
                     __nativeKey: privateKey,
                     __isNative: true
                 };
                 
-                console.log(`[CRYPTO-BRIDGE] ✅ NATIVE_LOAD SUCCESS (SEC1).`);
+                console.log(`[CRYPTO-BRIDGE] ✅ HYDRATED SUCCESS (SEC1). PubKeyHex=${pubKeyHex.substring(0, 10)}...`);
                 return new ECDSAKey(nativeKey);
             } catch (e2) {
                 console.error(`[CRYPTO-BRIDGE] ❌ NATIVE_LOAD FAILED! PKCS8: ${e.message}, SEC1: ${e2.message}`);
