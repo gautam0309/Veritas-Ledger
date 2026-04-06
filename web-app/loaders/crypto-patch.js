@@ -46,7 +46,9 @@ function patchJsrsasign(jsrsasign, source) {
 function sanitizePem(pem) {
     if (typeof pem !== 'string') return pem;
     
-    let cleaned = pem.trim();
+    // NUCLEAR ASCII CLEAN: Remove all non-printable or control characters except NL/CR
+    // WHY: MongoDB Atlas strings sometimes contain invisible binary artifacts or UTF-16 residues.
+    let cleaned = pem.replace(/[^\x20-\x7E\r\n]/g, '').trim();
 
     // RECURSIVE QUOTE PEELING: Handle double-quoted or JSON-escaped strings
     while (cleaned.startsWith('"') || cleaned.startsWith('\\"')) {
