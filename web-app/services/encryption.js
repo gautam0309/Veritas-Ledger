@@ -27,7 +27,7 @@ const { MerkleTree } = require('merkletreejs');
 const SHA256 = require('crypto-js/sha256');
 
 const chaincode = require('./fabric/chaincode');
-const { getEncryptedWallet } = require('./fabric/encrypted-wallet');
+const { getMongoWallet } = require('./fabric/mongo-wallet');
 const config = require('../loaders/config');
 const certificates = require('../database/models/certificates');
 
@@ -125,8 +125,8 @@ async function generateMerkleRoot(certData) {
  */
 async function createDigitalSignature(stringToSign, signerEmail) {
     
-    // Decrypt and load the user's identity from the file system
-    const wallet = await getEncryptedWallet(config.fabric.walletPath);
+    // Decrypt and load the user's identity from MongoDB
+    const wallet = await getMongoWallet();
     const identity = await wallet.get(signerEmail);
 
     if (!identity) {
