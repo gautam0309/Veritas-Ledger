@@ -106,12 +106,21 @@
 
             html5QrCode = new Html5Qrcode("reader");
             
-            // Start the scanner immediately targeting the environment (rear) camera
+            // Request HD stream to capture dense ZKP QR Codes on mobile
             html5QrCode.start(
-                { facingMode: "environment" }, 
                 { 
-                  fps: 20, 
-                  // Removed qrbox to scan the entire frame for dense/large QR codes.
+                    facingMode: "environment",
+                    width: { min: 640, ideal: 1280, max: 1920 },
+                    height: { min: 480, ideal: 720, max: 1080 }
+                }, 
+                { 
+                  fps: 10, 
+                  // Responsive qrbox taking 90% of screen to force proper scaling
+                  qrbox: function(viewfinderWidth, viewfinderHeight) {
+                      let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                      let size = Math.floor(minEdge * 0.90);
+                      return { width: size, height: size };
+                  },
                   formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
                 },
                 onScanSuccess,
