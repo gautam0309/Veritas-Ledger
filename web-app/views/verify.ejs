@@ -131,7 +131,13 @@
             
             // Redirect to URL if it looks like a URL (which Veritas QR codes are)
             if (decodedText.startsWith('http')) {
-                window.location.href = decodedText;
+                // Check if it's an old generic QR code without identifying params
+                if (decodedText === 'https://veritasledger.dpdns.org/verify' || decodedText === 'http://localhost:4000/verify') {
+                    alert("This is a legacy generic QR code that does not contain identifying data. Please type the student's Roll Number manually to complete verification.");
+                    $('#rollno-tab').tab('show');
+                } else {
+                    window.location.href = decodedText;
+                }
             } else {
                 if(/^\d{9,12}$/.test(decodedText)) {
                     $('#rollno-tab').tab('show');
@@ -147,6 +153,18 @@
         }
 
         const urlParams = new URLSearchParams(window.location.search);
+        
+        const rollParam = urlParams.get('rollNumber');
+        if (rollParam) {
+            $('#rollno-tab').tab('show');
+            $('input[name="rollNumber"]').val(rollParam);
+            // Optional: submit visually after a tiny delay so the user sees it loading
+            setTimeout(() => {
+                $('form[action="/verify/rollnumber"]').submit();
+            }, 500);
+            return;
+        }
+
         const proofParam = urlParams.get('proof');
         if (proofParam) {
             try {
