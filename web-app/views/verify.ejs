@@ -109,7 +109,11 @@
             // Start the scanner immediately targeting the environment (rear) camera
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { 
+                  fps: 20, 
+                  // Removed qrbox to scan the entire frame for dense/large QR codes.
+                  formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+                },
                 onScanSuccess,
                 onScanFailure
             ).catch(err => {
@@ -129,8 +133,8 @@
             $('#cameraIcon').show();
             $('#cameraMsg').text('QR Code Detected! Processing...').show();
             
-            // Redirect to URL if it looks like a URL (which Veritas QR codes are)
-            if (decodedText.startsWith('http')) {
+            // Redirect to URL if it looks like a URL or a relative path (which Veritas QR proofs are)
+            if (decodedText.startsWith('http') || decodedText.startsWith('/')) {
                 // Check if it's an old generic QR code without identifying params
                 if (decodedText === 'https://veritasledger.dpdns.org/verify' || decodedText === 'http://localhost:4000/verify') {
                     alert("This is a legacy generic QR code that does not contain identifying data. Please type the student's Roll Number manually to complete verification.");
@@ -168,12 +172,39 @@
         const proofParam = urlParams.get('proof');
         if (proofParam) {
             try {
+                // The proofParam is base64 encoded JSON
                 const proofJSON = atob(proofParam);
                 $('#qr-tab').tab('show');
+                
+                // Displaying a small message so they know what's happening
+                $('body').append('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;"><div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div><h4 class="mt-3 text-primary">Validating Cryptographic Proof...</h4></div>');
+                
+                // Auto-submit the JSON object to the verification engine
+                let form = $('<form></form>', {
+                    action: '/verify',
+                    method: 'POST'
+                });
+                
+                form.append($('<input></input>', {
+                    type: 'hidden',
+                    name: 'proofObject',
+                    value: proofJSON
+                }));
+                // In case CSRF is needed at the domain-level middleware
+                form.append($('<input></input>', {
+                    type: 'hidden',
+                    name: '_csrf',
+                    value: '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+                }));
+                
+                $('body').append(form);
+                setTimeout(() => {
+                    form.submit();
+                }, 500); // Tiny delay so the UI updates
             } catch (e) {
                 console.error("Invalid proof parameter", e);
+                alert("The QR code proof data is corrupted or invalid.");
             }
         }
     });
 </script>
-
