@@ -154,7 +154,7 @@ async function generateCertificatePDF(certData) {
              // WHAT: Anyone holding the printed PDF can scan this to open the public portal
              try {
                 // The URL they will be sent to
-                const verifyUrl = `http://localhost:4000/verify`;
+                const verifyUrl = `https://veritasledger.dpdns.org/verify`;
                 
                 // Generate the QR as a Base64 string
                  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1, color: { dark: '#667eea', light: '#1a1a2e' } });

@@ -68,12 +68,13 @@
 
                             <!-- QR Code Pane -->
                             <div class="tab-pane fade text-center" id="qrPane" role="tabpanel">
-                                <div class="qr-upload-box p-5 border-dashed"
-                                    style="border: 2px dashed var(--border-color); border-radius: 20px; background: var(--bg-secondary);">
-                                    <i data-feather="camera"
+                                <div class="qr-upload-box p-4 border-dashed mx-auto"
+                                    style="border: 2px dashed var(--border-color); border-radius: 20px; background: var(--bg-secondary); max-width: 400px;">
+                                    <div id="reader" style="width: 100%; display: none; margin-bottom: 20px;"></div>
+                                    <i data-feather="camera" id="cameraIcon"
                                         style="width: 48px; height: 48px; color: var(--text-muted);" class="mb-3"></i>
-                                    <p class="text-secondary mb-3">Scan or upload certificate QR code</p>
-                                    <button class="btn btn-outline-primary px-4" style="border-radius: 10px;">Open
+                                    <p class="text-secondary mb-3" id="cameraMsg">Scan certificate QR code</p>
+                                    <button id="openCameraBtn" type="button" class="btn btn-outline-primary px-4" style="border-radius: 10px;">Open
                                         Camera</button>
                                 </div>
                             </div>
@@ -92,9 +93,54 @@
 </body>
 
 </html>
+<script nonce="<%= nonce %>" src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script nonce="<%= nonce %>">
-    // If URL has ?proof= parameter (from QR code scan), auto-fill and submit
     $(document).ready(function () {
+        let html5QrcodeScanner = null;
+
+        $('#openCameraBtn').click(function() {
+            $('#reader').show();
+            $('#cameraIcon').hide();
+            $('#cameraMsg').hide();
+            $(this).hide();
+
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                /* verbose= */ false
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        });
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Stop scanning once successful
+            if(html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
+            $('#reader').hide();
+            $('#cameraIcon').show();
+            $('#cameraMsg').text('QR Code Detected! Processing...').show();
+            
+            // Redirect to URL if it looks like a URL (which Veritas QR codes are)
+            if (decodedText.startsWith('http')) {
+                window.location.href = decodedText;
+            } else {
+                // If it's a raw String/Roll number, maybe put it in the box?
+                // Actually, let's check roll number length, if it's 10 digits
+                if(/^\d{9,12}$/.test(decodedText)) {
+                    $('#rollno-tab').tab('show');
+                    $('input[name="rollNumber"]').val(decodedText);
+                } else {
+                    alert("Unknown QR code format detected: " + decodedText);
+                }
+            }
+        }
+
+        function onScanFailure(error) {
+            // handle scan failure, usually better to ignore and keep scanning
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const proofParam = urlParams.get('proof');
         if (proofParam) {
