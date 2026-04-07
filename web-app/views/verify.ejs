@@ -96,7 +96,7 @@
 <script nonce="<%= nonce %>" src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script nonce="<%= nonce %>">
     $(document).ready(function () {
-        let html5QrcodeScanner = null;
+        let html5QrCode = null;
 
         $('#openCameraBtn').click(function() {
             $('#reader').show();
@@ -104,19 +104,26 @@
             $('#cameraMsg').hide();
             $(this).hide();
 
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader", 
-                { fps: 10, qrbox: {width: 250, height: 250} },
-                /* verbose= */ false
-            );
+            html5QrCode = new Html5Qrcode("reader");
             
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            // Start the scanner immediately targeting the environment (rear) camera
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Camera start failed:", err);
+                $('#cameraMsg').text("Camera access denied or unavailable.").removeClass('text-secondary').addClass('text-danger').show();
+            });
         });
 
         function onScanSuccess(decodedText, decodedResult) {
             // Stop scanning once successful
-            if(html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                });
             }
             $('#reader').hide();
             $('#cameraIcon').show();
@@ -126,8 +133,6 @@
             if (decodedText.startsWith('http')) {
                 window.location.href = decodedText;
             } else {
-                // If it's a raw String/Roll number, maybe put it in the box?
-                // Actually, let's check roll number length, if it's 10 digits
                 if(/^\d{9,12}$/.test(decodedText)) {
                     $('#rollno-tab').tab('show');
                     $('input[name="rollNumber"]').val(decodedText);
@@ -138,7 +143,7 @@
         }
 
         function onScanFailure(error) {
-            // handle scan failure, usually better to ignore and keep scanning
+            // handle scan failure, ignored so it keeps scanning
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -147,7 +152,6 @@
             try {
                 const proofJSON = atob(proofParam);
                 $('#qr-tab').tab('show');
-                // Auto-submit logic would go here if needed for QR
             } catch (e) {
                 console.error("Invalid proof parameter", e);
             }

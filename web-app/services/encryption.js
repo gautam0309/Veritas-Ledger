@@ -89,8 +89,8 @@ async function generateMerkleTree(certData) {
     // 4. Hash every single item in the ordered array to create the "leaves" of the tree
     const mTreeLeaves = certDataArray.map(x => hashFn(x.toString()));
 
-    // 5. Construct the actual tree
-    const mTree = new MerkleTree(mTreeLeaves, hashFn);
+    // 5. Construct the actual tree with {complete: true} for standard multiProof support
+    const mTree = new MerkleTree(mTreeLeaves, hashFn, { complete: true });
 
     return mTree;
 }
